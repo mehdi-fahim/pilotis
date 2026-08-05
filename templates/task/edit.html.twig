@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ task.title }} - Pilotis{% endblock %}
+{% block page_title %}Modifier la tâche{% endblock %}
+
+{% block body %}
+<div class="card-pilotis form-card"><div class="card-body">
+    {{ form_start(form) }}
+        {{ form_row(form.title) }}{{ form_row(form.project) }}{{ form_row(form.description) }}
+        <div class="row g-3">
+            <div class="col-md-6">{{ form_row(form.department) }}</div>
+            <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+            <div class="col-md-6">{{ form_row(form.startDate) }}</div>
+            <div class="col-md-6">{{ form_row(form.dueDate) }}</div>
+        </div>
+        {{ form_row(form.status) }}{{ form_row(form.priority) }}
+        {{ form_row(form.estimateMinutes) }}{{ form_row(form.timeSpentMinutes) }}
+        <button class="btn btn-primary btn-pilotis">Enregistrer</button>
+        <a href="{{ path('app_task_show', {id: task.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
+    {{ form_end(form) }}
+</div></div>
+{% endblock %}

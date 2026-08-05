@@ -1,0 +1,16 @@
+{% extends 'base_guest.html.twig' %}
+
+{% block title %}Réinitialisation - Pilotis{% endblock %}
+{% block page_title %}Mot de passe oublié{% endblock %}
+
+{% block guest_body %}
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <h1 class="h4 mb-4">Réinitialiser le mot de passe</h1>
+        {{ form_start(form) }}
+            {{ form_row(form.email) }}
+            <button class="btn btn-primary w-100">Envoyer le lien</button>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

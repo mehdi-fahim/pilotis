@@ -1,0 +1,18 @@
+parameters:
+    documents_directory: '%env(resolve:DOCUMENTS_DIRECTORY)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/Entity/'
+            - '../src/DTO/'
+            - '../src/Kernel.php'
+
+    App\Service\DocumentUploader:
+        arguments:
+            $targetDirectory: '%documents_directory%'

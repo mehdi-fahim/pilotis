@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repository;
+
+use App\Domain\Entity\PasswordResetToken;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+/**
+ * @extends ServiceEntityRepository<PasswordResetToken>
+ */
+class PasswordResetTokenRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, PasswordResetToken::class);
+    }
+
+    public function findValidToken(string $token): ?PasswordResetToken
+    {
+        $entity = $this->findOneBy(['token' => $token]);
+
+        if ($entity === null || $entity->isExpired()) {
+            return null;
+        }
+
+        return $entity;
+    }
+}

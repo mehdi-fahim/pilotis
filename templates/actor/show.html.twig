@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}{{ actor.fullName }} - Pilotis{% endblock %}
+{% block page_title %}{{ actor.fullName }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('app_actor_edit', {id: actor.id}) }}" class="btn btn-outline-secondary btn-pilotis">Modifier</a>
+{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card-pilotis"><div class="card-body">
+            <div class="text-muted small">Fonction</div>
+            <div class="fw-semibold mb-3">{{ actor.role ?: '—' }}</div>
+            <div class="text-muted small">Service</div>
+            <div class="mb-3">{{ actor.department ? actor.department.name : '—' }}</div>
+            <div class="text-muted small">E-mail</div>
+            <div class="mb-3">{{ actor.email ?: '—' }}</div>
+            <div class="text-muted small">Téléphone</div>
+            <div class="mb-3">{{ actor.phone ?: '—' }}</div>
+            <div class="text-muted small">Notes</div>
+            <div>{{ actor.notes ?: '—' }}</div>
+        </div></div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card-pilotis">
+            <div class="card-header">Tâches assignées</div>
+            <div class="card-body">
+                {% if actor.tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-pilotis">
+                            <thead><tr><th>Tâche</th><th>Projet</th><th>Statut</th><th>Échéance</th></tr></thead>
+                            <tbody>
+                            {% for task in actor.tasks %}
+                                <tr>
+                                    <td><a href="{{ path('app_task_show', {id: task.id}) }}">{{ task.title }}</a></td>
+                                    <td>{{ task.project.name }}</td>
+                                    <td>{{ ui.task_status_badge(task.status) }}</td>
+                                    <td>{{ task.dueDate ? task.dueDate|date('d/m/Y') : '—' }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Aucune tâche assignée.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

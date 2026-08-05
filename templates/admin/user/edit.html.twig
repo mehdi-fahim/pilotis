@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ user.fullName }} - Pilotis{% endblock %}
+{% block page_title %}Modifier {{ user.fullName }}{% endblock %}
+{% block breadcrumb %}Administration / Utilisateurs / Modifier{% endblock %}
+
+{% block body %}
+<div class="card-pilotis form-card">
+    <div class="card-header">Modifier l'utilisateur</div>
+    <div class="card-body">
+        {{ form_start(form) }}
+            <div class="row g-3">
+                <div class="col-md-6">{{ form_row(form.firstName) }}</div>
+                <div class="col-md-6">{{ form_row(form.lastName) }}</div>
+                <div class="col-12">{{ form_row(form.email) }}</div>
+                <div class="col-12">{{ form_row(form.password) }}</div>
+                <div class="col-12">{{ form_row(form.roles) }}</div>
+                <div class="col-md-6">{{ form_row(form.isVerified) }}</div>
+                <div class="col-md-6">{{ form_row(form.isActive) }}</div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button class="btn btn-primary btn-pilotis">Enregistrer</button>
+                <a href="{{ path('app_admin_user_show', {id: user.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
+            </div>
+        {{ form_end(form) }}
+
+        <form method="post" action="{{ path('app_admin_user_delete', {id: user.id}) }}" class="mt-4 pt-3 border-top" onsubmit="return confirm('Supprimer cet utilisateur ?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
+            <button class="btn btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i> Supprimer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

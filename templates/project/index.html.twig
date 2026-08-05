@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Projets - Pilotis{% endblock %}
+{% block page_title %}Projets{% endblock %}
+{% block breadcrumb %}Projets{% endblock %}
+
+{% block page_actions %}
+<a href="{{ path('app_project_new') }}" class="btn btn-accent btn-sm"><i class="bi bi-plus-lg me-1"></i> Nouveau projet</a>
+{% endblock %}
+
+{% block body %}
+<div class="card-dark">
+    {% if projects %}
+        <div class="table-responsive">
+            <table class="table table-dark-custom">
+                <thead>
+                    <tr>
+                        <th>Projet</th><th>Statut</th><th>Priorité</th><th>Santé</th><th>Avancement</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td>
+                            <a href="{{ path('app_project_show', {id: project.id}) }}">{{ project.name }}</a>
+                            {% if project.isOverdue() %}<span class="badge bg-danger ms-1">Retard</span>{% endif %}
+                            <div class="small text-muted">{{ project.startDate|date('d/m/Y') }}{% if project.endDate %} → {{ project.endDate|date('d/m/Y') }}{% endif %}</div>
+                        </td>
+                        <td>{{ ui.project_status_badge(project.status) }}</td>
+                        <td>{{ ui.priority_badge(project.priority) }}</td>
+                        <td>{{ ui.health_badge(project.healthStatus) }}</td>
+                        <td style="min-width:120px">{{ ui.progress_bar(project.progressPercent) }}</td>
+                        <td class="text-end">
+                            <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="btn btn-sm btn-outline-dark-custom"><i class="bi bi-kanban"></i></a>
+                            <a href="{{ path('app_project_show', {id: project.id}) }}" class="btn btn-sm btn-accent">Voir</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('folder2-open', 'Aucun projet.', path('app_project_new'), 'Créer un projet') }}
+    {% endif %}
+</div>
+{% endblock %}

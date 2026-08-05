@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utilisateurs - Pilotis{% endblock %}
+{% block page_title %}Utilisateurs{% endblock %}
+{% block breadcrumb %}Administration / Utilisateurs{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Tous les utilisateurs</h2>
+        <div class="subtitle">Gérez les comptes et les rôles d'accès</div>
+    </div>
+    <a href="{{ path('app_admin_user_new') }}" class="btn btn-accent btn-pilotis"><i class="bi bi-plus-lg"></i> Nouvel utilisateur</a>
+</div>
+
+<div class="card-pilotis">
+    {% if users %}
+        <div class="table-responsive">
+            <table class="table table-pilotis mb-0">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Rôles</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="user-avatar">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</span>
+                                <div>
+                                    <div class="user-table-name">{{ user.fullName }}</div>
+                                    <div class="user-table-email">{{ user.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% for role in user.roles %}
+                                <span class="badge badge-pilotis bg-primary me-1">{{ role|replace({'ROLE_': ''}) }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if user.isActive %}
+                                <span class="badge badge-pilotis bg-success">Actif</span>
+                            {% else %}
+                                <span class="badge badge-pilotis bg-danger">Inactif</span>
+                            {% endif %}
+                            {% if user.isVerified %}
+                                <span class="badge badge-pilotis bg-info ms-1">Vérifié</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ path('app_admin_user_show', {id: user.id}) }}" class="table-action-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                            <a href="{{ path('app_admin_user_edit', {id: user.id}) }}" class="table-action-btn ms-1" title="Modifier"><i class="bi bi-pencil"></i></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="card-body text-center py-5 text-muted">Aucun utilisateur.</div>
+    {% endif %}
+</div>
+{% endblock %}

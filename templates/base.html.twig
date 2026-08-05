@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Pilotis{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234dabf7'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-weight='bold'>P</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <meta name="csrf-token" content="{{ csrf_token('submit') }}">
+    {% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('vendor/bootstrap/dist/css/bootstrap.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+    {% endblock %}
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
+</head>
+<body>
+{% set current_route = app.request.attributes.get('_route') %}
+<div id="wrapper" data-controller="sidebar">
+    <nav id="sidebar" data-sidebar-target="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">P</div>
+            <span class="brand-name">Pilotis</span>
+        </div>
+        <div class="sidebar-search d-none d-lg-block">
+            <i class="bi bi-search"></i>
+            <input type="search" placeholder="Rechercher…" disabled>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Pilotage</div>
+            <ul class="nav flex-column">
+                <li><a href="{{ path('app_dashboard') }}" class="nav-link {{ current_route == 'app_dashboard' ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
+                <li><a href="{{ path('app_project_index') }}" class="nav-link {{ current_route starts with 'app_project' ? 'active' : '' }}"><i class="bi bi-folder2-open"></i> Projets</a></li>
+                <li><a href="{{ path('app_task_index') }}" class="nav-link {{ current_route starts with 'app_task' ? 'active' : '' }}"><i class="bi bi-check2-square"></i> Tâches</a></li>
+            </ul>
+            <div class="nav-section-title mt-3">Vues</div>
+            <ul class="nav flex-column">
+                <li><a href="{{ path('app_kanban_index') }}" class="nav-link {{ current_route starts with 'app_kanban' ? 'active' : '' }}"><i class="bi bi-kanban"></i> Kanban</a></li>
+                <li><a href="{{ path('app_timeline_index') }}" class="nav-link {{ current_route starts with 'app_timeline' ? 'active' : '' }}"><i class="bi bi-bar-chart-steps"></i> Gantt / Timeline</a></li>
+            </ul>
+            <div class="nav-section-title mt-3">Organisation</div>
+            <ul class="nav flex-column">
+                <li><a href="{{ path('app_department_index') }}" class="nav-link {{ current_route starts with 'app_department' ? 'active' : '' }}"><i class="bi bi-diagram-3"></i> Services</a></li>
+                <li><a href="{{ path('app_actor_index') }}" class="nav-link {{ current_route starts with 'app_actor' ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Acteurs</a></li>
+                <li><a href="{{ path('app_document_index') }}" class="nav-link {{ current_route starts with 'app_document' ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> Documents</a></li>
+                <li><a href="{{ path('app_activity_index') }}" class="nav-link {{ current_route starts with 'app_activity' ? 'active' : '' }}"><i class="bi bi-clock-history"></i> Activité</a></li>
+            </ul>
+            {% if is_granted('ROLE_ADMIN') %}
+            <div class="nav-section-title mt-3">Administration</div>
+            <ul class="nav flex-column">
+                <li><a href="{{ path('app_admin_user_index') }}" class="nav-link {{ current_route starts with 'app_admin_user' ? 'active' : '' }}"><i class="bi bi-people"></i> Utilisateurs</a></li>
+            </ul>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="sidebar-overlay" data-sidebar-target="overlay" data-action="click->sidebar#close"></div>
+
+    <div id="page-content">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3 flex-grow-1">
+                <button class="topbar-icon-btn d-lg-none" data-action="click->sidebar#toggle" aria-label="Menu">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-search d-none d-md-block">
+                    <i class="bi bi-search"></i>
+                    <input type="search" placeholder="Rechercher un projet, une tâche…" disabled>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                {% if app.user %}
+                    {% set unread_count = pilotis_unread_notifications_count() %}
+                    <a href="{{ path('app_notification_index') }}" class="topbar-icon-btn text-decoration-none">
+                        <i class="bi bi-envelope"></i>
+                    </a>
+                    <div class="dropdown">
+                        <button class="topbar-icon-btn border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bell"></i>
+                            {% if unread_count > 0 %}<span class="badge-dot"></span>{% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width:320px;">
+                            <li class="dropdown-header">Notifications</li>
+                            {% for notification in pilotis_recent_notifications() %}
+                                <li>
+                                    <a class="dropdown-item py-2 {{ notification.isRead ? '' : 'fw-semibold' }}" href="{{ notification.link ?? path('app_notification_index') }}">
+                                        <div>{{ notification.title }}</div>
+                                        <small class="text-muted">{{ notification.message|slice(0, 60) }}</small>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li><span class="dropdown-item-text text-muted small">Aucune notification</span></li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center small" href="{{ path('app_notification_index') }}">Voir tout</a></li>
+                        </ul>
+                    </div>
+                    <div class="dropdown">
+                        <div class="topbar-user" data-bs-toggle="dropdown">
+                            <div class="mini-avatar">{{ app.user.firstName|first|upper }}</div>
+                            <span class="d-none d-md-inline">{{ app.user.firstName }}</span>
+                            <i class="bi bi-chevron-down ms-1" style="font-size:0.65rem;"></i>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-header">{{ app.user.fullName }}</li>
+                            <li><a class="dropdown-item" href="{{ path('app_notification_index') }}"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ path('app_logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Déconnexion</a></li>
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="page-heading">
+                <div>
+                    <div class="breadcrumb-pilotis">
+                        <a href="{{ path('app_dashboard') }}">Accueil</a> / {% block breadcrumb %}{% endblock %}
+                    </div>
+                    <h1>{% block page_title %}Pilotis{% endblock %}</h1>
+                </div>
+                <div>{% block page_actions %}{% endblock %}</div>
+            </div>
+
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% block body %}{% endblock %}
+        </main>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

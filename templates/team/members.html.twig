@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Membres - {{ team.name }}{% endblock %}
+{% block page_title %}Membres · {{ team.name }}{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-header">Membres actuels</div>
+            <ul class="list-group list-group-flush">
+            {% for member in team.members %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ member.user.fullName }} <span class="badge bg-secondary">{{ member.role.label() }}</span></span>
+                    {% if member.user.id != team.owner.id %}
+                        <form method="post" action="{{ path('app_team_member_remove', {id: team.id, userId: member.user.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('remove-member-' ~ member.user.id) }}">
+                            <button class="btn btn-sm btn-outline-danger">Retirer</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card"><div class="card-header">Ajouter un membre</div><div class="card-body">
+            {{ form_start(form) }}{{ form_row(form.user) }}{{ form_row(form.role) }}
+            <button class="btn btn-primary">Ajouter</button>{{ form_end(form) }}
+        </div></div>
+    </div>
+</div>
+{% endblock %}

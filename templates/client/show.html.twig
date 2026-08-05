@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ client.name }} - Pilotis{% endblock %}
+{% block page_title %}{{ client.name }}{% endblock %}
+
+{% block body %}
+<div class="card mb-3"><div class="card-body">
+    <p><strong>Entreprise :</strong> {{ client.company }}</p>
+    <p><strong>E-mail :</strong> {{ client.email }}</p>
+    <p><strong>Téléphone :</strong> {{ client.phone }}</p>
+    <p><strong>Adresse :</strong> {{ client.address }}</p>
+    <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-primary">Modifier</a>
+</div></div>
+<div class="card"><div class="card-header">Projets</div>
+    <ul class="list-group list-group-flush">
+    {% for project in client.projects %}
+        <li class="list-group-item"><a href="{{ path('app_project_show', {id: project.id}) }}">{{ project.name }}</a></li>
+    {% else %}
+        <li class="list-group-item text-muted">Aucun projet.</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endblock %}

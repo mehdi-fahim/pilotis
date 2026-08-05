@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Timeline - Pilotis{% endblock %}
+{% block page_title %}Gantt / Timeline{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Timeline Gantt</h2>
+        <div class="subtitle">Visualisez le planning par service et par tâche</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for project in projects %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ path('app_timeline_project', {projectId: project.id}) }}" class="text-decoration-none d-block h-100">
+                <div class="project-picker-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon info"><i class="bi bi-bar-chart-steps"></i></div>
+                        <div>
+                            <div class="fw-semibold" style="color:var(--text-primary)">{{ project.name }}</div>
+                            <div class="small text-muted">
+                                {{ project.startDate|date('d/m/Y') }}
+                                {% if project.endDate %} → {{ project.endDate|date('d/m/Y') }}{% endif %}
+                            </div>
+                            <div class="small text-muted mt-1">{{ project.tasks|length }} tâches planifiées</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% else %}
+        <div class="col-12">{{ ui.empty_state('bar-chart-steps', 'Aucun projet disponible.', path('app_project_new'), 'Créer un projet') }}</div>
+    {% endfor %}
+</div>
+{% endblock %}

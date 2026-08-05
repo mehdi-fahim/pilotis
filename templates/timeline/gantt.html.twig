@@ -1,0 +1,80 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Timeline · {{ project.name }} - Pilotis{% endblock %}
+{% block page_title %}Gantt — {{ project.name }}{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>{{ project.name }}</h2>
+        <div class="subtitle">{{ timelineStart|date('d/m/Y') }} → {{ timelineEnd|date('d/m/Y') }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="btn btn-outline-secondary btn-pilotis"><i class="bi bi-kanban"></i> Kanban</a>
+        <a href="{{ path('app_project_show', {id: project.id}) }}" class="btn btn-outline-secondary btn-pilotis">Projet</a>
+    </div>
+</div>
+
+<div class="card-pilotis gantt-container mb-3">
+    <div class="card-body py-3">
+        <div class="gantt-legend">
+            <span><i style="background:#5c6478"></i> À faire</span>
+            <span><i style="background:var(--accent-blue)"></i> En cours</span>
+            <span><i style="background:var(--accent-primary)"></i> Revue</span>
+            <span><i style="background:var(--accent-teal)"></i> Terminé</span>
+            <span><i style="background:var(--accent-red)"></i> En retard</span>
+        </div>
+    </div>
+</div>
+
+<div class="card-pilotis gantt-container" data-turbo="false">
+    <div class="card-body">
+        {% if groupedBars %}
+            <div class="gantt-header">
+                <div>Tâche</div>
+                <div class="gantt-scale-wrap">
+                    <div class="gantt-scale">
+                        {% for marker in monthMarkers %}
+                            <span class="gantt-scale-marker" style="left: {{ marker.percent }}%;">{{ marker.label }}</span>
+                        {% endfor %}
+                        {% if todayPercent is not null %}
+                            <span class="gantt-today-line" style="left: {{ todayPercent }}%;" title="Aujourd'hui"></span>
+                        {% endif %}
+                    </div>
+                    <div class="small text-muted mt-1">{{ timelineStart|date('d/m/Y') }} — {{ timelineEnd|date('d/m/Y') }}</div>
+                </div>
+            </div>
+            {% for groupName, bars in groupedBars %}
+                <div class="gantt-group-title">{{ groupName }}</div>
+                {% for bar in bars %}
+                    <div class="gantt-row">
+                        <div class="gantt-label">
+                            <a href="{{ path('app_task_show', {id: bar.task.id}) }}" class="text-decoration-none fw-medium">{{ bar.task.title }}</a>
+                            <div class="mt-1">
+                                {{ ui.task_status_badge(bar.task.status) }}
+                                {% if bar.task.assignedActor %}<span class="small text-muted ms-1">{{ bar.task.assignedActor.fullName }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="gantt-track">
+                            {% for marker in monthMarkers %}
+                                <span class="gantt-grid-line" style="left: {{ marker.percent }}%;"></span>
+                            {% endfor %}
+                            {% if todayPercent is not null %}
+                                <span class="gantt-today-line" style="left: {{ todayPercent }}%;"></span>
+                            {% endif %}
+                            <div class="gantt-bar {{ bar.task.status.value }} {{ bar.task.isOverdue() ? 'overdue' : '' }}"
+                                 style="left: {{ bar.offsetPercent }}%; width: {{ bar.widthPercent }}%;"
+                                 title="{{ bar.start|date('d/m/Y') }} → {{ bar.end|date('d/m/Y') }}">
+                                {{ bar.start|date('d/m') }} → {{ bar.end|date('d/m') }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            {{ ui.empty_state('bar-chart-steps', 'Aucune tâche à afficher. Ajoutez des dates de début/fin aux tâches.', path('app_task_new') ~ '?projectId=' ~ project.id, 'Créer une tâche') }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

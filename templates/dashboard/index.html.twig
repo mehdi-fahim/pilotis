@@ -1,0 +1,162 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Dashboard - Pilotis{% endblock %}
+{% block page_title %}Dashboard principal{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block body %}
+<div data-controller="dashboard"
+     data-dashboard-status-data-value="{{ stats.chartData.projectsByStatus|json_encode }}"
+     data-dashboard-health-data-value="{{ stats.chartData.projectsByHealth|json_encode }}"
+     data-dashboard-spark-projects-value="{{ stats.sparklines.projects|json_encode }}"
+     data-dashboard-spark-tasks-value="{{ stats.sparklines.tasks|json_encode }}"
+     data-dashboard-spark-activity-value="{{ stats.sparklines.activity|json_encode }}">
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-body">
+                    <div class="kpi-label">Projets</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="kpi-value">{{ stats.projectCount }}</div>
+                        <span class="kpi-badge up"><i class="bi bi-folder2-open"></i></span>
+                    </div>
+                </div>
+                <div class="kpi-bar teal" style="width:{{ stats.projectCount > 0 ? 100 : 0 }}%"></div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-body">
+                    <div class="kpi-label">En retard</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="kpi-value">{{ stats.overdueProjects|length }}</div>
+                        <span class="kpi-badge {{ stats.overdueProjects|length > 0 ? 'down' : 'up' }}">
+                            <i class="bi bi-{{ stats.overdueProjects|length > 0 ? 'exclamation-triangle' : 'check' }}"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="kpi-bar red" style="width:{{ stats.overdueProjects|length > 0 ? min(stats.overdueProjects|length * 25, 100) : 5 }}%"></div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-body">
+                    <div class="kpi-label">Tâches ouvertes</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="kpi-value">{{ stats.openTasks }}</div>
+                        <span class="kpi-badge neutral"><i class="bi bi-list-task"></i></span>
+                    </div>
+                </div>
+                <div class="kpi-bar blue" style="width:{{ stats.openTasks > 0 ? min(stats.openTasks * 10, 100) : 5 }}%"></div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-body">
+                    <div class="kpi-label">Avancement moyen</div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="kpi-value">{{ stats.averageProgress }}<small class="fs-6 text-muted">%</small></div>
+                        <span class="kpi-badge up"><i class="bi bi-graph-up"></i></span>
+                    </div>
+                </div>
+                <div class="kpi-bar purple" style="width:{{ stats.averageProgress }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="card-dark h-100">
+                <div class="card-header">
+                    <span><i class="bi bi-graph-up me-2"></i>Avancement des projets</span>
+                </div>
+                <div class="card-body">
+                    <canvas data-dashboard-target="mainChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="spark-card">
+                <div class="spark-label">Projets actifs</div>
+                <div class="spark-row">
+                    <div class="spark-value">{{ stats.projectCount }}</div>
+                    <div class="spark-trend up"><i class="bi bi-arrow-up-short"></i> 7j</div>
+                </div>
+                <canvas data-dashboard-target="sparkProjects" height="50"></canvas>
+            </div>
+            <div class="spark-card">
+                <div class="spark-label">Tâches terminées</div>
+                <div class="spark-row">
+                    <div class="spark-value">{{ stats.completedTasks }}</div>
+                    <div class="spark-trend neutral" style="color:var(--accent-blue)"><i class="bi bi-check2"></i></div>
+                </div>
+                <canvas data-dashboard-target="sparkTasks" height="50"></canvas>
+            </div>
+            <div class="spark-card mb-0">
+                <div class="spark-label">Activité (7 jours)</div>
+                <div class="spark-row">
+                    <div class="spark-value">{{ stats.sparklines.activity|last }}</div>
+                    <div class="spark-trend up"><i class="bi bi-lightning"></i></div>
+                </div>
+                <canvas data-dashboard-target="sparkActivity" height="50"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card-dark h-100">
+                <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Statuts projets</div>
+                <div class="card-body"><canvas data-dashboard-target="statusChart" height="180"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-dark h-100">
+                <div class="card-header"><i class="bi bi-alarm me-2"></i>Projets en retard</div>
+                <div class="card-body p-0">
+                    {% if stats.overdueProjects %}
+                        <table class="table-dark-custom w-100">
+                            <tbody>
+                            {% for project in stats.overdueProjects|slice(0, 4) %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ path('app_project_show', {id: project.id}) }}">{{ project.name }}</a>
+                                        <div class="small text-muted">{{ project.endDate|date('d/m/Y') }}</div>
+                                    </td>
+                                    <td class="text-end">{{ ui.health_badge(project.healthStatus) }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="p-4 text-center text-muted"><i class="bi bi-check-circle" style="color:var(--accent-teal)"></i><p class="mb-0 mt-2 small">Tout est à jour</p></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card-dark h-100">
+                <div class="card-header">
+                    <span><i class="bi bi-lightning me-2"></i>Activité récente</span>
+                    <a href="{{ path('app_activity_index') }}" class="btn btn-sm btn-outline-dark-custom">Journal</a>
+                </div>
+                <div class="card-body">
+                    {% for activity in stats.recentActivities %}
+                        <div class="activity-item-dark">
+                            <div class="activity-dot-dark"></div>
+                            <div>
+                                {{ ui.action_label(activity.action) }} <strong>{{ activity.entityType }}</strong>
+                                <div class="small text-muted">{{ activity.createdAt|date('d/m H:i') }}</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0 small">Aucune activité.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

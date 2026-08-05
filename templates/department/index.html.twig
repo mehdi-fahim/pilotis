@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Services - Pilotis{% endblock %}
+{% block page_title %}Services{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Services</h2>
+        <div class="subtitle">Départements et unités organisationnelles</div>
+    </div>
+    <a href="{{ path('app_department_new') }}" class="btn btn-primary btn-pilotis"><i class="bi bi-plus-lg"></i> Nouveau service</a>
+</div>
+
+<div class="card-pilotis">
+    {% if departments %}
+        <div class="table-responsive">
+            <table class="table table-pilotis">
+                <thead><tr><th>Nom</th><th>Code</th><th>Acteurs</th><th>Tâches</th><th></th></tr></thead>
+                <tbody>
+                {% for department in departments %}
+                    <tr>
+                        <td class="fw-semibold">{{ department.name }}</td>
+                        <td>{{ department.code ?: '—' }}</td>
+                        <td>{{ department.actors|length }}</td>
+                        <td>{{ department.tasks|length }}</td>
+                        <td class="text-end"><a href="{{ path('app_department_show', {id: department.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('diagram-3', 'Aucun service.', path('app_department_new'), 'Créer un service') }}
+    {% endif %}
+</div>
+{% endblock %}

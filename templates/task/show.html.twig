@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}{{ task.title }} - Pilotis{% endblock %}
+{% block page_title %}{{ task.title }}{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card-pilotis mb-3">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {{ ui.task_status_badge(task.status) }}
+                    {{ ui.priority_badge(task.priority) }}
+                    {% if task.isOverdue() %}<span class="badge badge-pilotis bg-danger">En retard</span>{% endif %}
+                </div>
+                <p class="text-muted">{{ task.description ?: 'Aucune description.' }}</p>
+                <div class="row g-3 small">
+                    <div class="col-sm-6"><strong>Projet</strong><br><a href="{{ path('app_project_show', {id: task.project.id}) }}">{{ task.project.name }}</a></div>
+                    <div class="col-sm-6"><strong>Service</strong><br>{{ task.department ? task.department.name : '—' }}</div>
+                    <div class="col-sm-6"><strong>Acteur assigné</strong><br>{{ task.assigneeLabel }}</div>
+                    <div class="col-sm-6"><strong>Estimation</strong><br>{{ (task.estimateMinutes / 60)|round(1) }} h</div>
+                    <div class="col-sm-6"><strong>Temps passé</strong><br>{{ (task.timeSpentMinutes / 60)|round(1) }} h</div>
+                    <div class="col-sm-6"><strong>Début</strong><br>{{ task.startDate ? task.startDate|date('d/m/Y') : '—' }}</div>
+                    <div class="col-sm-6"><strong>Fin / échéance</strong><br>{{ task.dueDate ? task.dueDate|date('d/m/Y') : '—' }}</div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{{ path('app_task_edit', {id: task.id}) }}" class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+                    <a href="{{ path('app_kanban_board', {projectId: task.project.id}) }}" class="btn btn-outline-secondary btn-sm btn-pilotis"><i class="bi bi-kanban"></i> Kanban</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-pilotis">
+            <div class="card-header"><i class="bi bi-chat-dots me-2"></i>Commentaires ({{ task.comments|length }})</div>
+            {% for comment in task.comments %}
+                <div class="card-body border-bottom py-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="user-avatar" style="width:28px;height:28px;font-size:0.7rem;">{{ comment.author.firstName|first|upper }}</div>
+                        <strong class="small">{{ comment.author.fullName }}</strong>
+                        <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
+                    </div>
+                    <div>{{ comment.content }}</div>
+                </div>
+            {% else %}
+                <div class="card-body text-muted small">Aucun commentaire pour l'instant.</div>
+            {% endfor %}
+            <div class="card-body bg-light">
+                {{ form_start(commentForm) }}
+                    {{ form_row(commentForm.content) }}
+                    <button class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-send"></i> Publier</button>
+                {{ form_end(commentForm) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

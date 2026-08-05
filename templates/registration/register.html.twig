@@ -1,0 +1,21 @@
+{% extends 'base_guest.html.twig' %}
+
+{% block title %}Inscription - Pilotis{% endblock %}
+
+{% block guest_body %}
+<h1 class="h4 fw-bold mb-1">Créer un compte</h1>
+<p class="text-muted small mb-4">Rejoignez Pilotis gratuitement</p>
+
+{{ form_start(form) }}
+    {{ form_row(form.email) }}
+    {{ form_row(form.firstName) }}
+    {{ form_row(form.lastName) }}
+    {{ form_row(form.password) }}
+    {{ form_row(form.agreeTerms) }}
+    <button class="btn btn-primary w-100 btn-pilotis py-2 mt-2" type="submit">S'inscrire</button>
+{{ form_end(form) }}
+
+<div class="mt-4 text-center small">
+    Déjà un compte ? <a href="{{ path('app_login') }}" class="text-decoration-none">Se connecter</a>
+</div>
+{% endblock %}

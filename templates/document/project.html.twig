@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Documents · {{ project.name }} - Pilotis{% endblock %}
+{% block page_title %}Documents · {{ project.name }}{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card"><div class="card-header">Téléverser</div><div class="card-body">
+            {{ form_start(form, {attr: {enctype: 'multipart/form-data'}}) }}
+                {{ form_row(form.file) }}
+                <button class="btn btn-primary">Téléverser</button>
+            {{ form_end(form) }}
+        </div></div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card"><div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th>Fichier</th><th>Taille</th><th>Par</th><th></th></tr></thead>
+                <tbody>
+                {% for document in documents %}
+                    <tr>
+                        <td>{{ document.originalFilename }}</td>
+                        <td>{{ (document.size / 1024)|round(1) }} Ko</td>
+                        <td>{{ document.uploadedBy.fullName }}</td>
+                        <td class="text-end">
+                            <a href="{{ path('app_document_download', {id: document.id}) }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
+                            <form method="post" action="{{ path('app_document_delete', {id: document.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer ce document ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete-document-' ~ document.id) }}">
+                                <button class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-muted">Aucun document.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div></div>
+    </div>
+</div>
+{% endblock %}

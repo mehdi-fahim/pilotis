@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ department.name }} - Pilotis{% endblock %}
+{% block page_title %}{{ department.name }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('app_department_edit', {id: department.id}) }}" class="btn btn-outline-secondary btn-pilotis">Modifier</a>
+{% endblock %}
+
+{% block body %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card-pilotis"><div class="card-body">
+            <div class="text-muted small">Code</div>
+            <div class="fw-semibold mb-3">{{ department.code ?: '—' }}</div>
+            <div class="text-muted small">Description</div>
+            <div>{{ department.description ?: '—' }}</div>
+        </div></div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card-pilotis mb-3">
+            <div class="card-header">Acteurs du service</div>
+            <div class="card-body">
+                {% if department.actors %}
+                    <ul class="list-group list-group-flush">
+                        {% for actor in department.actors %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <a href="{{ path('app_actor_show', {id: actor.id}) }}">{{ actor.fullName }}</a>
+                                <span class="text-muted small">{{ actor.role ?: '' }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">Aucun acteur rattaché.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-pilotis">
+            <div class="card-header">Tâches du service</div>
+            <div class="card-body">
+                {% if department.tasks %}
+                    <ul class="list-group list-group-flush">
+                        {% for task in department.tasks %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <a href="{{ path('app_task_show', {id: task.id}) }}">{{ task.title }}</a>
+                                <span class="text-muted small">{{ task.project.name }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">Aucune tâche pour ce service.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

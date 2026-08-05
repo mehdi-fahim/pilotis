@@ -1,0 +1,66 @@
+{% macro project_status_badge(status) %}
+    <span class="badge badge-pilotis bg-{{ status.badgeClass() }}">{{ status.label() }}</span>
+{% endmacro %}
+
+{% macro priority_badge(priority) %}
+    <span class="badge badge-pilotis bg-{{ priority.badgeClass() }}">{{ priority.label() }}</span>
+{% endmacro %}
+
+{% macro health_badge(health) %}
+    <span class="badge badge-pilotis bg-{{ health.badgeClass() }}">
+        <span class="health-dot {{ health.value }} me-1"></span>{{ health.label() }}
+    </span>
+{% endmacro %}
+
+{% macro task_status_badge(status) %}
+    {% set class = {
+        'todo': 'secondary',
+        'in_progress': 'primary',
+        'review': 'info',
+        'done': 'success'
+    }[status.value] %}
+    <span class="badge badge-pilotis bg-{{ class }}">{{ status.label() }}</span>
+{% endmacro %}
+
+{% macro risk_status_badge(status) %}
+    {% set class = {
+        'identified': 'warning',
+        'mitigating': 'info',
+        'resolved': 'success',
+        'accepted': 'secondary'
+    }[status.value] %}
+    <span class="badge badge-pilotis bg-{{ class }}">{{ status.label() }}</span>
+{% endmacro %}
+
+{% macro progress_bar(percent, label = null) %}
+<div>
+    {% if label %}<div class="d-flex justify-content-between small mb-1"><span>{{ label }}</span><span class="fw-semibold">{{ percent }}%</span></div>{% endif %}
+    <div class="progress progress-pilotis">
+        <div class="progress-bar" style="width: {{ percent }}%"></div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro action_label(action) %}
+    {% set labels = {
+        'created': 'Création',
+        'updated': 'Modification',
+        'deleted': 'Suppression'
+    } %}
+    {% set colors = {
+        'created': 'success',
+        'updated': 'primary',
+        'deleted': 'danger'
+    } %}
+    <span class="badge badge-pilotis bg-{{ colors[action] ?? 'secondary' }}">{{ labels[action] ?? action }}</span>
+{% endmacro %}
+
+{% macro empty_state(icon, message, action_url = null, action_label = null) %}
+<div class="empty-state">
+    <i class="bi bi-{{ icon }}"></i>
+    <p class="mb-3">{{ message }}</p>
+    {% if action_url and action_label %}
+        <a href="{{ action_url }}" class="btn btn-primary btn-pilotis">{{ action_label }}</a>
+    {% endif %}
+</div>
+{% endmacro %}

@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Kanban - Pilotis{% endblock %}
+{% block page_title %}Kanban{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Tableaux Kanban</h2>
+        <div class="subtitle">Sélectionnez un projet pour gérer vos tâches visuellement</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for project in projects %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="text-decoration-none d-block h-100">
+                <div class="project-picker-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon primary"><i class="bi bi-kanban"></i></div>
+                        <div>
+                            <div class="fw-semibold" style="color:var(--text-primary)">{{ project.name }}</div>
+                            <div class="small text-muted">{{ project.tasks|length }} tâches · {{ project.progressPercent }}% avancement</div>
+                            <div class="mt-1">{{ ui.health_badge(project.healthStatus) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    {% else %}
+        <div class="col-12">{{ ui.empty_state('kanban', 'Aucun projet disponible.', path('app_project_new'), 'Créer un projet') }}</div>
+    {% endfor %}
+</div>
+{% endblock %}

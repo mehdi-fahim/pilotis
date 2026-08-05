@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Documents - Pilotis{% endblock %}
+{% block page_title %}Documents{% endblock %}
+
+{% block body %}
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card"><div class="card-header">Par projet</div>
+            <ul class="list-group list-group-flush">
+            {% for project in projects %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ project.name }}</span>
+                    <a href="{{ path('app_document_project', {projectId: project.id}) }}" class="btn btn-sm btn-outline-primary">Gérer</a>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="card"><div class="card-header">Tous les documents</div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead><tr><th>Fichier</th><th>Projet</th><th>Taille</th><th>Date</th><th></th></tr></thead>
+            <tbody>
+            {% for document in documents %}
+                <tr>
+                    <td>{{ document.originalFilename }}</td>
+                    <td>{{ document.project.name }}</td>
+                    <td>{{ (document.size / 1024)|round(1) }} Ko</td>
+                    <td>{{ document.createdAt|date('d/m/Y') }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('app_document_download', {id: document.id}) }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="text-muted">Aucun document.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

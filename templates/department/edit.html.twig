@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier {{ department.name }} - Pilotis{% endblock %}
+{% block page_title %}Modifier le service{% endblock %}
+
+{% block body %}
+<div class="card-pilotis form-card"><div class="card-body">
+    {{ form_start(form) }}
+        {{ form_row(form.name) }}{{ form_row(form.code) }}{{ form_row(form.description) }}
+        <button class="btn btn-primary btn-pilotis">Enregistrer</button>
+        <a href="{{ path('app_department_show', {id: department.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
+    {{ form_end(form) }}
+</div></div>
+{% endblock %}

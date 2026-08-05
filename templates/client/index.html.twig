@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Clients - Pilotis{% endblock %}
+{% block page_title %}Clients{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Clients</h2>
+        <div class="subtitle">Gérez votre portefeuille clients</div>
+    </div>
+    <a href="{{ path('app_client_new') }}" class="btn btn-primary btn-pilotis"><i class="bi bi-plus-lg"></i> Nouveau client</a>
+</div>
+
+<div class="card-pilotis">
+    {% if clients %}
+        <div class="table-responsive">
+            <table class="table table-pilotis">
+                <thead><tr><th>Nom</th><th>Entreprise</th><th>E-mail</th><th>Téléphone</th><th></th></tr></thead>
+                <tbody>
+                {% for client in clients %}
+                    <tr>
+                        <td class="fw-semibold">{{ client.name }}</td>
+                        <td>{{ client.company ?: '—' }}</td>
+                        <td>{{ client.email ?: '—' }}</td>
+                        <td>{{ client.phone ?: '—' }}</td>
+                        <td class="text-end"><a href="{{ path('app_client_show', {id: client.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('building', 'Aucun client.', path('app_client_new'), 'Ajouter un client') }}
+    {% endif %}
+</div>
+{% endblock %}

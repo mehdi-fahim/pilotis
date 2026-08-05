@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Administration - Pilotis{% endblock %}
+{% block page_title %}Administration{% endblock %}
+
+{% block body %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">Utilisateurs</div><div class="fs-4">{{ userCount }}</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">Projets</div><div class="fs-4">{{ projectCount }}</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">Tâches ouvertes</div><div class="fs-4">{{ openTasks }}</div></div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body"><div class="small text-muted">Budget consommé</div><div class="fs-4">{{ budgetSummary.consumed|number_format(0, ',', ' ') }} €</div></div></div></div>
+</div>
+<div class="d-flex gap-2">
+    <a href="{{ path('app_admin_user_index') }}" class="btn btn-primary">Gérer les utilisateurs</a>
+    <a href="{{ path('app_activity_index') }}" class="btn btn-outline-secondary">Journal d'activité</a>
+</div>
+{% endblock %}

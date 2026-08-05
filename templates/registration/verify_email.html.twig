@@ -1,0 +1,14 @@
+{% extends 'base_guest.html.twig' %}
+
+{% block title %}Vérification e-mail - Pilotis{% endblock %}
+{% block page_title %}Vérification e-mail{% endblock %}
+
+{% block guest_body %}
+<div class="card shadow-sm">
+    <div class="card-body p-4 text-center">
+        <h1 class="h4 mb-3">Vérification impossible</h1>
+        <p class="text-muted">Le lien de vérification est invalide ou a expiré.</p>
+        <a href="{{ path('app_login') }}" class="btn btn-primary">Retour à la connexion</a>
+    </div>
+</div>
+{% endblock %}

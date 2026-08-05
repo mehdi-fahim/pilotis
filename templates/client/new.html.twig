@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau client - Pilotis{% endblock %}
+{% block page_title %}Nouveau client{% endblock %}
+
+{% block body %}
+<div class="card"><div class="card-body">
+    {{ form_start(form) }}
+        {{ form_row(form.name) }}{{ form_row(form.company) }}{{ form_row(form.email) }}
+        {{ form_row(form.phone) }}{{ form_row(form.address) }}
+        <button class="btn btn-primary">Créer</button>
+    {{ form_end(form) }}
+</div></div>
+{% endblock %}

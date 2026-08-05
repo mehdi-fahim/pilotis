@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Acteurs - Pilotis{% endblock %}
+{% block page_title %}Acteurs{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Acteurs</h2>
+        <div class="subtitle">Personnes impliquées sans compte utilisateur</div>
+    </div>
+    <a href="{{ path('app_actor_new') }}" class="btn btn-primary btn-pilotis"><i class="bi bi-plus-lg"></i> Nouvel acteur</a>
+</div>
+
+<div class="card-pilotis">
+    {% if actors %}
+        <div class="table-responsive">
+            <table class="table table-pilotis">
+                <thead><tr><th>Nom</th><th>Fonction</th><th>Service</th><th>E-mail</th><th></th></tr></thead>
+                <tbody>
+                {% for actor in actors %}
+                    <tr>
+                        <td class="fw-semibold">{{ actor.fullName }}</td>
+                        <td>{{ actor.role ?: '—' }}</td>
+                        <td>{{ actor.department ? actor.department.name : '—' }}</td>
+                        <td>{{ actor.email ?: '—' }}</td>
+                        <td class="text-end"><a href="{{ path('app_actor_show', {id: actor.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('person', 'Aucun acteur.', path('app_actor_new'), 'Ajouter un acteur') }}
+    {% endif %}
+</div>
+{% endblock %}

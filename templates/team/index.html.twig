@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Équipes - Pilotis{% endblock %}
+{% block page_title %}Équipes{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between mb-3">
+    <h2 class="h4 mb-0">Équipes</h2>
+    <a href="{{ path('app_team_new') }}" class="btn btn-primary">Nouvelle équipe</a>
+</div>
+<div class="card"><div class="table-responsive">
+    <table class="table table-hover mb-0">
+        <thead><tr><th>Nom</th><th>Propriétaire</th><th>Membres</th><th></th></tr></thead>
+        <tbody>
+        {% for team in teams %}
+            <tr>
+                <td>{{ team.name }}</td>
+                <td>{{ team.owner.fullName }}</td>
+                <td><span class="badge bg-secondary">{{ team.members|length }}</span></td>
+                <td class="text-end">
+                    <a href="{{ path('app_team_show', {id: team.id}) }}" class="btn btn-sm btn-outline-primary">Voir</a>
+                    <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-sm btn-outline-secondary">Membres</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="text-muted">Aucune équipe.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div></div>
+{% endblock %}

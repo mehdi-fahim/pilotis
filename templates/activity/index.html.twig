@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Activité - Pilotis{% endblock %}
+{% block page_title %}Journal d'activité{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Journal d'activité</h2>
+        <div class="subtitle">Historique automatique de toutes les actions</div>
+    </div>
+</div>
+
+<div class="card-pilotis">
+    {% if activities %}
+        <div class="table-responsive">
+            <table class="table table-pilotis">
+                <thead><tr><th>Date</th><th>Action</th><th>Entité</th><th>Utilisateur</th></tr></thead>
+                <tbody>
+                {% for activity in activities %}
+                    <tr>
+                        <td class="text-muted small">{{ activity.createdAt|date('d/m/Y H:i') }}</td>
+                        <td>{{ ui.action_label(activity.action) }}</td>
+                        <td><span class="fw-medium">{{ activity.entityType }}</span> <span class="text-muted">#{{ activity.entityId }}</span></td>
+                        <td>{{ activity.user ? activity.user.fullName : 'Système' }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('clock-history', 'Aucune activité enregistrée.') }}
+    {% endif %}
+</div>
+{% endblock %}

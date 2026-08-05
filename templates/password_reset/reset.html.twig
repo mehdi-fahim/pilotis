@@ -1,0 +1,16 @@
+{% extends 'base_guest.html.twig' %}
+
+{% block title %}Nouveau mot de passe - Pilotis{% endblock %}
+{% block page_title %}Nouveau mot de passe{% endblock %}
+
+{% block guest_body %}
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <h1 class="h4 mb-4">Définir un nouveau mot de passe</h1>
+        {{ form_start(form) }}
+            {{ form_row(form.password) }}
+            <button class="btn btn-primary w-100">Enregistrer</button>
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}
