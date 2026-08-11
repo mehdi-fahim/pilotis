@@ -20,8 +20,6 @@ final class ActivityLogController extends AbstractController
     #[Route('', name: 'app_activity_index', methods: ['GET'])]
     public function index(): Response
     {
-        return $this->render('activity/index.html.twig', [
-            'activities' => $this->activityLogRepository->findRecent(100),
-        ]);
+        return $this->redirectToRoute('app_dashboard');
     }
 }

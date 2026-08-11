@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}Incidents - Pilotis{% endblock %}
+{% block page_title %}Suivi des incidents{% endblock %}
+{% block breadcrumb %}Incidents{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <div>
+        <h2>Incidents</h2>
+        <div class="subtitle">{{ openCount }} incident(s) ouvert(s) — déclarez, assignez et suivez la résolution</div>
+    </div>
+    <a href="{{ path('app_incident_new') }}" class="btn btn-accent btn-pilotis"><i class="bi bi-plus-lg"></i> Nouvel incident</a>
+</div>
+
+<div class="card-pilotis">
+    {% if incidents %}
+        <div class="table-responsive">
+            <table class="table table-pilotis mb-0">
+                <thead>
+                    <tr>
+                        <th>Réf.</th>
+                        <th>Incident</th>
+                        <th>Service</th>
+                        <th>Intervenant</th>
+                        <th>Découverte</th>
+                        <th>Priorité</th>
+                        <th>Statut</th>
+                        <th>Échéance</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for incident in incidents %}
+                    <tr>
+                        <td><code class="small">{{ incident.reference }}</code></td>
+                        <td>
+                            <a href="{{ path('app_incident_show', {id: incident.id}) }}" class="fw-semibold text-decoration-none">{{ incident.title }}</a>
+                            {% if incident.isOverdue() %}<span class="badge badge-pilotis bg-danger ms-1">SLA dépassé</span>{% endif %}
+                        </td>
+                        <td>{{ incident.department ? incident.department.name : '—' }}</td>
+                        <td>{{ incident.assigneeLabel }}</td>
+                        <td>{{ incident.discoveredAt|date('d/m/Y') }}</td>
+                        <td>{{ ui.priority_badge(incident.priority) }}</td>
+                        <td>{{ ui.incident_status_badge(incident.status) }}</td>
+                        <td>{{ incident.dueDate ? incident.dueDate|date('d/m/Y') : '—' }}</td>
+                        <td class="text-end">
+                            <a href="{{ path('app_incident_show', {id: incident.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        {{ ui.empty_state('exclamation-triangle', 'Aucun incident enregistré.', path('app_incident_new'), 'Déclarer un incident') }}
+    {% endif %}
+</div>
+{% endblock %}

@@ -32,10 +32,9 @@ final class DocumentController extends AbstractController
     #[Route('/documents', name: 'app_document_index', methods: ['GET'])]
     public function index(): Response
     {
-        return $this->render('document/index.html.twig', [
-            'documents' => $this->documentRepository->findBy([], ['createdAt' => 'DESC']),
-            'projects' => $this->projectRepository->findBy([], ['name' => 'ASC']),
-        ]);
+        $this->addFlash('info', 'Les documents se consultent depuis un projet.');
+
+        return $this->redirectToRoute('app_project_index');
     }
 
     #[Route('/projects/{projectId}/documents', name: 'app_document_project', methods: ['GET', 'POST'], requirements: ['projectId' => '\d+'])]

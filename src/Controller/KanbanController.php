@@ -29,17 +29,9 @@ final class KanbanController extends AbstractController
     #[Route('', name: 'app_kanban_index', methods: ['GET'])]
     public function index(): Response
     {
-        $projects = $this->projectRepository->findBy([], ['name' => 'ASC']);
+        $this->addFlash('info', 'Ouvrez le Kanban depuis la fiche d\'un projet.');
 
-        if (\count($projects) === 1) {
-            return $this->redirectToRoute('app_kanban_board', [
-                'projectId' => $projects[0]->getId(),
-            ]);
-        }
-
-        return $this->render('kanban/index.html.twig', [
-            'projects' => $projects,
-        ]);
+        return $this->redirectToRoute('app_project_index');
     }
 
     #[Route('/{projectId}', name: 'app_kanban_board', methods: ['GET'], requirements: ['projectId' => '\d+'])]

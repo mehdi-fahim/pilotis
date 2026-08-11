@@ -1,14 +1,26 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
 
 {% block title %}Modifier {{ department.name }} - Pilotis{% endblock %}
 {% block page_title %}Modifier le service{% endblock %}
 
 {% block body %}
-<div class="card-pilotis form-card"><div class="card-body">
-    {{ form_start(form) }}
-        {{ form_row(form.name) }}{{ form_row(form.code) }}{{ form_row(form.description) }}
-        <button class="btn btn-primary btn-pilotis">Enregistrer</button>
-        <a href="{{ path('app_department_show', {id: department.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
-    {{ form_end(form) }}
-</div></div>
+{{ f.form_page_header('Modifier le service', department.name, path('app_department_show', {id: department.id})) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set infos %}
+                <div class="row g-3">
+                    <div class="col-md-8">{{ form_row(form.name) }}</div>
+                    <div class="col-md-4">{{ form_row(form.code) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Service', 'diagram-3', infos) }}
+
+            {{ f.form_actions('Enregistrer', path('app_department_show', {id: department.id})) }}
+        {{ form_end(form) }}
+    </div>
+</div>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
+
+{% block title %}Modifier {{ incident.reference }} - Pilotis{% endblock %}
+{% block page_title %}Modifier {{ incident.reference }}{% endblock %}
+{% block breadcrumb %}Incidents / Modifier{% endblock %}
+
+{% block body %}
+{{ f.form_page_header('Modifier l\'incident', incident.reference ~ ' — ' ~ incident.title, path('app_incident_show', {id: incident.id})) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set infos %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.title) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                    <div class="col-md-6">{{ form_row(form.priority) }}</div>
+                    <div class="col-md-6">{{ form_row(form.discoveredAt) }}</div>
+                    <div class="col-md-6">{{ form_row(form.status) }}</div>
+                    <div class="col-md-6">{{ form_row(form.dueDate) }}</div>
+                    <div class="col-12">{{ form_row(form.environment) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Incident', 'exclamation-triangle', infos) }}
+
+            {% set assign %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.department) }}</div>
+                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Rattachements', 'diagram-3', assign) }}
+
+            {% set resolution %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.reproductionSteps) }}</div>
+                    <div class="col-12">{{ form_row(form.impact) }}</div>
+                    <div class="col-12">{{ form_row(form.rootCause) }}</div>
+                    <div class="col-12">{{ form_row(form.solution) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Analyse & résolution', 'wrench', resolution) }}
+
+            {{ f.form_actions('Enregistrer', path('app_incident_show', {id: incident.id})) }}
+        {{ form_end(form) }}
+
+        {{ f.form_delete(path('app_incident_delete', {id: incident.id}), 'delete-incident-' ~ incident.id) }}
+    </div>
+</div>
+{% endblock %}

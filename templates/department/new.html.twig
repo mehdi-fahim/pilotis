@@ -1,14 +1,26 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
 
 {% block title %}Nouveau service - Pilotis{% endblock %}
 {% block page_title %}Nouveau service{% endblock %}
 
 {% block body %}
-<div class="card-pilotis form-card"><div class="card-body">
-    {{ form_start(form) }}
-        {{ form_row(form.name) }}{{ form_row(form.code) }}{{ form_row(form.description) }}
-        <button class="btn btn-primary btn-pilotis">Créer</button>
-        <a href="{{ path('app_department_index') }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
-    {{ form_end(form) }}
-</div></div>
+{{ f.form_page_header('Nouveau service', 'Les services apparaîtront en pastilles colorées dans les formulaires de rattachement.', path('app_department_index')) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set infos %}
+                <div class="row g-3">
+                    <div class="col-md-8">{{ form_row(form.name) }}</div>
+                    <div class="col-md-4">{{ form_row(form.code) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Service', 'diagram-3', infos) }}
+
+            {{ f.form_actions('Créer le service', path('app_department_index')) }}
+        {{ form_end(form) }}
+    </div>
+</div>
 {% endblock %}

@@ -12,6 +12,10 @@
     </span>
 {% endmacro %}
 
+{% macro incident_status_badge(status) %}
+    <span class="badge badge-pilotis bg-{{ status.badgeClass() }}">{{ status.label() }}</span>
+{% endmacro %}
+
 {% macro task_status_badge(status) %}
     {% set class = {
         'todo': 'secondary',

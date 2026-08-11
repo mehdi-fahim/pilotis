@@ -18,17 +18,17 @@ final class DepartmentFormType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nom du service',
-                'attr' => ['class' => 'form-control'],
+                'attr' => ['placeholder' => 'Ex. Direction des Systèmes d\'Information'],
             ])
             ->add('code', TextType::class, [
                 'label' => 'Code',
                 'required' => false,
-                'attr' => ['class' => 'form-control', 'placeholder' => 'IT, RH, FIN…'],
+                'attr' => ['placeholder' => 'DSI, RH, FIN…'],
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'required' => false,
-                'attr' => ['class' => 'form-control', 'rows' => 3],
+                'attr' => ['rows' => 3, 'placeholder' => 'Périmètre et mission du service…'],
             ])
         ;
     }

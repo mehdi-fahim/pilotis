@@ -45,7 +45,7 @@
             {% else %}
                 <div class="card-body text-muted small">Aucun commentaire pour l'instant.</div>
             {% endfor %}
-            <div class="card-body bg-light">
+            <div class="card-body" style="background: var(--bg-input);">
                 {{ form_start(commentForm) }}
                     {{ form_row(commentForm.content) }}
                     <button class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-send"></i> Publier</button>

@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
+
+{% block title %}Nouvel incident - Pilotis{% endblock %}
+{% block page_title %}Nouvel incident{% endblock %}
+{% block breadcrumb %}Incidents / Nouveau{% endblock %}
+
+{% block body %}
+{{ f.form_page_header('Déclarer un incident', 'L\'échéance SLA sera calculée automatiquement selon la priorité et la date de découverte.', path('app_incident_index')) }}
+
+<div class="alert alert-info small mb-3">
+    <i class="bi bi-info-circle me-1"></i>
+    SLA : Critique 1j · Haute 3j · Moyenne 7j · Basse 14j
+</div>
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set infos %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.title) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                    <div class="col-md-6">{{ form_row(form.priority) }}</div>
+                    <div class="col-md-6">{{ form_row(form.discoveredAt) }}</div>
+                    <div class="col-12">{{ form_row(form.environment) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Incident', 'exclamation-triangle', infos) }}
+
+            {% set assign %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.department) }}</div>
+                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Rattachements', 'diagram-3', assign) }}
+
+            {% set diag %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.reproductionSteps) }}</div>
+                    <div class="col-12">{{ form_row(form.impact) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Diagnostic', 'search', diag) }}
+
+            {{ f.form_actions('Créer l\'incident', path('app_incident_index')) }}
+        {{ form_end(form) }}
+    </div>
+</div>
+{% endblock %}

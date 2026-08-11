@@ -1,22 +1,36 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
 
 {% block title %}Modifier {{ actor.fullName }} - Pilotis{% endblock %}
 {% block page_title %}Modifier l'acteur{% endblock %}
 
 {% block body %}
-<div class="card-pilotis form-card"><div class="card-body">
-    {{ form_start(form) }}
-        <div class="row g-3">
-            <div class="col-md-6">{{ form_row(form.firstName) }}</div>
-            <div class="col-md-6">{{ form_row(form.lastName) }}</div>
-            <div class="col-md-6">{{ form_row(form.role) }}</div>
-            <div class="col-md-6">{{ form_row(form.department) }}</div>
-            <div class="col-md-6">{{ form_row(form.email) }}</div>
-            <div class="col-md-6">{{ form_row(form.phone) }}</div>
-            <div class="col-12">{{ form_row(form.notes) }}</div>
-        </div>
-        <button class="btn btn-primary btn-pilotis">Enregistrer</button>
-        <a href="{{ path('app_actor_show', {id: actor.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
-    {{ form_end(form) }}
-</div></div>
+{{ f.form_page_header('Modifier l\'acteur', actor.fullName, path('app_actor_show', {id: actor.id})) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set identity %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.firstName) }}</div>
+                    <div class="col-md-6">{{ form_row(form.lastName) }}</div>
+                    <div class="col-12">{{ form_row(form.role) }}</div>
+                    <div class="col-md-6">{{ form_row(form.department) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Identité & rattachement', 'person-badge', identity) }}
+
+            {% set contact %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.email) }}</div>
+                    <div class="col-md-6">{{ form_row(form.phone) }}</div>
+                    <div class="col-12">{{ form_row(form.notes) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Contact', 'envelope', contact) }}
+
+            {{ f.form_actions('Enregistrer', path('app_actor_show', {id: actor.id})) }}
+        {{ form_end(form) }}
+    </div>
+</div>
 {% endblock %}

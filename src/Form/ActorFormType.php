@@ -6,6 +6,7 @@ namespace App\Form;
 
 use App\Domain\Entity\Department;
 use App\DTO\ActorDto;
+use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -22,38 +23,41 @@ final class ActorFormType extends AbstractType
         $builder
             ->add('firstName', TextType::class, [
                 'label' => 'Prénom',
-                'attr' => ['class' => 'form-control'],
+                'attr' => ['placeholder' => 'Marie'],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Nom',
-                'attr' => ['class' => 'form-control'],
+                'attr' => ['placeholder' => 'Dupont'],
             ])
             ->add('role', TextType::class, [
                 'label' => 'Fonction / rôle',
                 'required' => false,
-                'attr' => ['class' => 'form-control', 'placeholder' => 'Sponsor, Chef de service…'],
+                'attr' => ['placeholder' => 'Sponsor, Chef de service…'],
             ])
             ->add('department', EntityType::class, [
                 'class' => Department::class,
-                'label' => 'Service',
+                'label' => 'Service de rattachement',
                 'required' => false,
-                'placeholder' => 'Aucun service',
-                'attr' => ['class' => 'form-select'],
+                'placeholder' => 'Sélectionner un service',
+                'choice_label' => static fn (Department $department): string => $department->getName(),
+                'query_builder' => static fn (EntityRepository $repository) => $repository->createQueryBuilder('d')
+                    ->orderBy('d.name', 'ASC'),
+                'attr' => ['class' => 'form-select form-select-modern'],
             ])
             ->add('email', EmailType::class, [
                 'label' => 'E-mail',
                 'required' => false,
-                'attr' => ['class' => 'form-control'],
+                'attr' => ['placeholder' => 'marie.dupont@exemple.fr'],
             ])
             ->add('phone', TelType::class, [
                 'label' => 'Téléphone',
                 'required' => false,
-                'attr' => ['class' => 'form-control'],
+                'attr' => ['placeholder' => '+33 6 00 00 00 00'],
             ])
             ->add('notes', TextareaType::class, [
                 'label' => 'Notes',
                 'required' => false,
-                'attr' => ['class' => 'form-control', 'rows' => 3],
+                'attr' => ['rows' => 3],
             ])
         ;
     }

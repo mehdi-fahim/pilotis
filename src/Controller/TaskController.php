@@ -38,19 +38,9 @@ final class TaskController extends AbstractController
     #[Route('', name: 'app_task_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $departmentId = $request->query->getInt('department');
-        $actorId = $request->query->getInt('actor');
+        $this->addFlash('info', 'Les tâches se consultent depuis un projet.');
 
-        $department = $departmentId > 0 ? $this->departmentRepository->find($departmentId) : null;
-        $actor = $actorId > 0 ? $this->actorRepository->find($actorId) : null;
-
-        return $this->render('task/index.html.twig', [
-            'tasks' => $this->taskRepository->findFiltered($department, $actor),
-            'departments' => $this->departmentRepository->findBy([], ['name' => 'ASC']),
-            'actors' => $this->actorRepository->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']),
-            'selectedDepartment' => $department,
-            'selectedActor' => $actor,
-        ]);
+        return $this->redirectToRoute('app_project_index');
     }
 
     #[Route('/new', name: 'app_task_new', methods: ['GET', 'POST'])]
@@ -59,12 +49,17 @@ final class TaskController extends AbstractController
         $dto = new TaskDto();
 
         $projectId = $request->query->getInt('projectId');
-        if ($projectId > 0) {
-            $project = $this->projectRepository->find($projectId);
-            if ($project !== null) {
-                $dto->project = $project;
-            }
+        if ($projectId <= 0) {
+            $this->addFlash('info', 'Créez une tâche depuis la fiche d\'un projet.');
+
+            return $this->redirectToRoute('app_project_index');
         }
+
+        $project = $this->projectRepository->find($projectId);
+        if ($project === null) {
+            throw $this->createNotFoundException();
+        }
+        $dto->project = $project;
 
         $departmentId = $request->query->getInt('department');
         if ($departmentId > 0) {
@@ -111,6 +106,7 @@ final class TaskController extends AbstractController
 
         return $this->render('task/new.html.twig', [
             'form' => $form,
+            'project' => $project,
         ]);
     }
 
@@ -167,13 +163,14 @@ final class TaskController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        $projectId = $task->getProject()->getId();
         $this->entityManager->remove($task);
         $this->entityManager->flush();
         $this->activityLogger->log('task.deleted', $task, $this->getUser());
 
         $this->addFlash('success', 'Tâche supprimée.');
 
-        return $this->redirectToRoute('app_task_index');
+        return $this->redirectToRoute('app_project_show', ['id' => $projectId, 'tab' => 'tasks']);
     }
 
     private function mapEntityToDto(Task $task): TaskDto

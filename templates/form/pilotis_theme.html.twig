@@ -1,0 +1,151 @@
+{% use "bootstrap_5_layout.html.twig" %}
+
+{# --- Champs texte enrichis --- #}
+{% block form_row %}
+    <div class="form-field mb-3">
+        {{ form_label(form) }}
+        {{ form_widget(form) }}
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block form_label %}
+    {%- if widget is not defined and label is not same as(false) -%}
+        {% set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' form-label form-label-modern')|trim}) %}
+    {%- endif -%}
+    {{- parent() -}}
+{% endblock %}
+
+{% block form_widget_simple %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-control form-control-modern')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block choice_widget_collapsed %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-select form-select-modern')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{% block textarea_widget %}
+    {% set attr = attr|merge({class: (attr.class|default('') ~ ' form-control form-control-modern')|trim}) %}
+    {{ parent() }}
+{% endblock %}
+
+{# Input pastille sans le libellé Bootstrap (évite le double texte) #}
+{% macro pill_radio(child, extra_attrs = {}) %}
+    <input
+        type="radio"
+        class="pill-input"
+        id="{{ child.vars.id }}"
+        name="{{ child.vars.full_name }}"
+        value="{{ child.vars.value }}"
+        {% if child.vars.checked %}checked="checked"{% endif %}
+        {% if child.vars.disabled %}disabled="disabled"{% endif %}
+        {% if child.vars.required %}required="required"{% endif %}
+        {% for attrname, attrvalue in extra_attrs %}
+            {{ attrname }}="{{ attrvalue }}"
+        {% endfor %}
+    />
+{% endmacro %}
+
+{% block pill_entity_widget %}
+    {% import _self as pills %}
+    {% set variant = form.vars.pill_variant|default('default') %}
+    <div class="pill-select pill-select-{{ variant }}" data-controller="pill-select" data-pill-select-variant-value="{{ variant }}">
+        <div class="pill-select-grid">
+            {%- for child in form %}
+                {% set entity = form_choice_data(form.vars.choices, child.vars.value) %}
+                {% set choiceLabel = form_choice_label(form.vars.choices, child.vars.value, child.vars.label) %}
+                {% set isEmpty = child.vars.value is empty %}
+                {% if isEmpty %}
+                    <label class="pill-option pill-option-empty" for="{{ child.vars.id }}">
+                        {{ pills.pill_radio(child) }}
+                        <span class="pill-content">
+                            <span class="pill-icon"><i class="bi bi-dash-circle"></i></span>
+                            <span class="pill-label">{{ choiceLabel }}</span>
+                        </span>
+                    </label>
+                {% elseif variant == 'department' and entity %}
+                    {% set color = entity_color(entity.id, entity.name) %}
+                    <label class="pill-option" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};">
+                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option'}) }}
+                        <span class="pill-content">
+                            <span class="pill-dot"></span>
+                            <span class="pill-label">{{ entity.name }}</span>
+                            {% if entity.code %}<span class="pill-meta">{{ entity.code }}</span>{% endif %}
+                        </span>
+                    </label>
+                {% elseif variant == 'actor' and entity %}
+                    {% set color = entity_color(entity.id, entity.fullName) %}
+                    {% set deptId = entity.department ? entity.department.id : '' %}
+                    <label class="pill-option pill-option-actor" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};" data-department-id="{{ deptId }}">
+                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option', 'data-department-id': deptId}) }}
+                        <span class="pill-content">
+                            <span class="pill-avatar">{{ entity_initials(entity.fullName) }}</span>
+                            <span class="pill-text-block">
+                                <span class="pill-label">{{ entity.fullName }}</span>
+                                {% if entity.role %}<span class="pill-meta">{{ entity.role }}</span>{% endif %}
+                                {% if entity.department %}<span class="pill-meta"><i class="bi bi-diagram-3"></i> {{ entity.department.name }}</span>{% endif %}
+                            </span>
+                        </span>
+                    </label>
+                {% elseif entity %}
+                    {% set color = entity_color(entity.id, choiceLabel) %}
+                    <label class="pill-option" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};">
+                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option'}) }}
+                        <span class="pill-content">
+                            <span class="pill-dot"></span>
+                            <span class="pill-label">{{ choiceLabel }}</span>
+                        </span>
+                    </label>
+                {% endif %}
+            {% else %}
+                <div class="pill-empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <span>Aucun élément disponible — créez-en un d'abord.</span>
+                </div>
+            {% endfor -%}
+        </div>
+    </div>
+{% endblock %}
+
+{% block pill_enum_widget %}
+    {% import _self as pills %}
+    <div class="pill-select pill-select-enum" data-controller="pill-select">
+        <div class="pill-select-grid">
+            {%- for child in form %}
+                {% set enum = form_choice_data(form.vars.choices, child.vars.value) %}
+                {% set choiceLabel = form_choice_label(form.vars.choices, child.vars.value, child.vars.label) %}
+                {% set badge = enum ? enum.badgeClass() : 'secondary' %}
+                <label class="pill-option pill-option-enum pill-badge-{{ badge }} pill-value-{{ child.vars.value }}" for="{{ child.vars.id }}">
+                    {{ pills.pill_radio(child) }}
+                    <span class="pill-content">
+                        <span class="pill-label">{{ choiceLabel }}</span>
+                    </span>
+                </label>
+            {% endfor -%}
+        </div>
+    </div>
+{% endblock %}
+
+{% block pill_choice_widget %}
+    {% import _self as pills %}
+    <div class="pill-select pill-select-choice" data-controller="pill-select">
+        <div class="pill-select-grid">
+            {%- for child in form %}
+                {% if child.vars.value is empty %}
+                    <label class="pill-option pill-option-empty" for="{{ child.vars.id }}">
+                        {{ pills.pill_radio(child) }}
+                        <span class="pill-content"><span class="pill-label">{{ child.vars.label }}</span></span>
+                    </label>
+                {% else %}
+                    <label class="pill-option pill-option-choice pill-env-{{ child.vars.value }}" for="{{ child.vars.id }}">
+                        {{ pills.pill_radio(child) }}
+                        <span class="pill-content"><span class="pill-label">{{ child.vars.label }}</span></span>
+                    </label>
+                {% endif %}
+            {% endfor -%}
+        </div>
+    </div>
+{% endblock %}

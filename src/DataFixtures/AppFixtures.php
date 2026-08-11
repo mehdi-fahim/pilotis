@@ -6,9 +6,11 @@ namespace App\DataFixtures;
 
 use App\Domain\Entity\Actor;
 use App\Domain\Entity\Department;
+use App\Domain\Entity\Incident;
 use App\Domain\Entity\Project;
 use App\Domain\Entity\Task;
 use App\Domain\Entity\User;
+use App\Domain\Enum\IncidentStatus;
 use App\Domain\Enum\Priority;
 use App\Domain\Enum\ProjectStatus;
 use App\Domain\Enum\TaskStatus;
@@ -84,6 +86,32 @@ final class AppFixtures extends Fixture
                 ->setDueDate(new \DateTimeImmutable(sprintf('%+d days', $endOffset)))
                 ->setKanbanOrder($this->nextKanbanOrder($manager, $project, $status));
             $manager->persist($task);
+        }
+
+        $incidents = [
+            ['Panne accès ERP module RH', IncidentStatus::IN_PROGRESS, Priority::CRITICAL, $it, $consultant, 2],
+            ['Lenteur réseau bâtiment B', IncidentStatus::OPEN, Priority::HIGH, $it, null, 5],
+            ['Erreur paie export mensuel', IncidentStatus::WAITING, Priority::MEDIUM, $finance, null, -1],
+            ['Poste utilisateur bloqué', IncidentStatus::RESOLVED, Priority::LOW, $it, $consultant, null],
+        ];
+
+        foreach ($incidents as [$title, $status, $priority, $department, $actor, $dueOffset]) {
+            $incident = new Incident();
+            $incident->setTitle($title)
+                ->setDescription('Incident de démonstration pour le tableau de bord.')
+                ->setStatus($status)
+                ->setPriority($priority)
+                ->setDepartment($department)
+                ->setAssignedActor($actor)
+                ->setReportedBy($admin)
+                ->setOpenedAt(new \DateTimeImmutable(sprintf('%+d days', random_int(-8, -1))));
+            if ($dueOffset !== null) {
+                $incident->setDueDate(new \DateTimeImmutable(sprintf('%+d days', $dueOffset)));
+            }
+            if (!$status->isOpen()) {
+                $incident->setResolvedAt(new \DateTimeImmutable('-1 day'));
+            }
+            $manager->persist($incident);
         }
 
         $manager->flush();

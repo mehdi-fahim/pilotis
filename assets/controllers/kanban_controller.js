@@ -13,20 +13,15 @@ export default class extends Controller {
         this.columnTargets.forEach((column) => {
             this.sortables.push(
                 Sortable.create(column, {
-                    group: {
-                        name: 'kanban',
-                        pull: true,
-                        put: true,
-                    },
+                    group: 'kanban',
                     animation: 180,
+                    handle: '.kanban-card-handle',
                     draggable: '.kanban-card',
-                    filter: 'a, button, input, textarea, select',
-                    preventOnFilter: true,
                     forceFallback: true,
                     fallbackOnBody: true,
-                    fallbackTolerance: 5,
+                    fallbackTolerance: 3,
                     swapThreshold: 0.65,
-                    emptyInsertThreshold: 24,
+                    emptyInsertThreshold: 20,
                     ghostClass: 'kanban-card-ghost',
                     dragClass: 'kanban-card-drag',
                     chosenClass: 'kanban-card-chosen',

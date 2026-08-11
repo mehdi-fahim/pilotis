@@ -1,25 +1,42 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
 
 {% block title %}Nouveau projet - Pilotis{% endblock %}
 {% block page_title %}Nouveau projet{% endblock %}
 
 {% block body %}
-<div class="page-header">
-    <div><h2>Créer un projet interne</h2></div>
-    <a href="{{ path('app_project_index') }}" class="btn btn-outline-secondary btn-pilotis"><i class="bi bi-arrow-left"></i> Retour</a>
-</div>
-<div class="card-pilotis form-card">
-    <div class="card-body">
+{{ f.form_page_header('Créer un projet interne', 'Définissez le périmètre, le calendrier et le suivi.', path('app_project_index')) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
         {{ form_start(form) }}
-            <div class="row g-3">
-                <div class="col-md-8">{{ form_row(form.name) }}</div>
-                <div class="col-md-4">{{ form_row(form.status) }}</div>
-                <div class="col-12">{{ form_row(form.description) }}</div>
-                <div class="col-md-4">{{ form_row(form.startDate) }}</div>
-                <div class="col-md-4">{{ form_row(form.endDate) }}</div>
-                <div class="col-md-4">{{ form_row(form.priority) }}</div>
-            </div>
-            <button class="btn btn-primary btn-pilotis mt-3"><i class="bi bi-check-lg"></i> Créer le projet</button>
+            {% set general %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.name) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Informations générales', 'folder2-open', general) }}
+
+            {% set planning %}
+                <div class="row g-3">
+                    <div class="col-md-4">{{ form_row(form.startDate) }}</div>
+                    <div class="col-md-4">{{ form_row(form.endDate) }}</div>
+                    <div class="col-md-4">{{ form_row(form.forecastEndDate) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Planning', 'calendar3', planning) }}
+
+            {% set suivi %}
+                <div class="row g-3">
+                    <div class="col-md-4">{{ form_row(form.status) }}</div>
+                    <div class="col-md-4">{{ form_row(form.priority) }}</div>
+                    <div class="col-md-4">{{ form_row(form.healthStatus) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Suivi & priorisation', 'speedometer2', suivi) }}
+
+            {{ f.form_actions('Créer le projet', path('app_project_index'), 'Annuler') }}
         {{ form_end(form) }}
     </div>
 </div>

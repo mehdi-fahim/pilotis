@@ -16,3 +16,7 @@ services:
     App\Service\DocumentUploader:
         arguments:
             $targetDirectory: '%documents_directory%'
+
+    App\Service\IncidentDocumentUploader:
+        arguments:
+            $targetDirectory: '%documents_directory%'

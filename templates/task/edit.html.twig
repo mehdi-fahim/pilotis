@@ -1,22 +1,46 @@
 {% extends 'base.html.twig' %}
+{% import '_partials/_form_macros.html.twig' as f %}
 
 {% block title %}Modifier {{ task.title }} - Pilotis{% endblock %}
 {% block page_title %}Modifier la tâche{% endblock %}
 
 {% block body %}
-<div class="card-pilotis form-card"><div class="card-body">
-    {{ form_start(form) }}
-        {{ form_row(form.title) }}{{ form_row(form.project) }}{{ form_row(form.description) }}
-        <div class="row g-3">
-            <div class="col-md-6">{{ form_row(form.department) }}</div>
-            <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
-            <div class="col-md-6">{{ form_row(form.startDate) }}</div>
-            <div class="col-md-6">{{ form_row(form.dueDate) }}</div>
-        </div>
-        {{ form_row(form.status) }}{{ form_row(form.priority) }}
-        {{ form_row(form.estimateMinutes) }}{{ form_row(form.timeSpentMinutes) }}
-        <button class="btn btn-primary btn-pilotis">Enregistrer</button>
-        <a href="{{ path('app_task_show', {id: task.id}) }}" class="btn btn-outline-secondary btn-pilotis">Annuler</a>
-    {{ form_end(form) }}
-</div></div>
+{{ f.form_page_header('Modifier la tâche', task.title, path('app_task_show', {id: task.id})) }}
+
+<div class="form-card-modern">
+    <div class="form-card-inner">
+        {{ form_start(form) }}
+            {% set infos %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.title) }}</div>
+                    <div class="col-12">{{ form_row(form.description) }}</div>
+                    <div class="col-12">{{ form_row(form.project) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Description', 'card-text', infos) }}
+
+            {% set assign %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.department) }}</div>
+                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Rattachements', 'people', assign) }}
+
+            {% set suivi %}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(form.status) }}</div>
+                    <div class="col-md-6">{{ form_row(form.priority) }}</div>
+                    <div class="col-md-6">{{ form_row(form.startDate) }}</div>
+                    <div class="col-md-6">{{ form_row(form.dueDate) }}</div>
+                    <div class="col-md-6">{{ form_row(form.estimateMinutes) }}</div>
+                    <div class="col-md-6">{{ form_row(form.timeSpentMinutes) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Suivi', 'kanban', suivi) }}
+
+            {{ f.form_actions('Enregistrer', path('app_task_show', {id: task.id})) }}
+        {{ form_end(form) }}
+    </div>
+</div>
 {% endblock %}

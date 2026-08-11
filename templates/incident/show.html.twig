@@ -1,0 +1,224 @@
+{% extends 'base.html.twig' %}
+{% import '_partials/_macros.html.twig' as ui %}
+
+{% block title %}{{ incident.reference }} - Pilotis{% endblock %}
+{% block page_title %}{{ incident.reference }}{% endblock %}
+{% block breadcrumb %}Incidents / {{ incident.reference }}{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('app_incident_edit', {id: incident.id}) }}" class="btn btn-primary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+{% endblock %}
+
+{% block body %}
+{% set envLabels = {
+    'production': 'Production',
+    'preproduction': 'Préproduction',
+    'recette': 'Recette / QA',
+    'development': 'Développement',
+    'other': 'Autre'
+} %}
+
+<div class="card-pilotis mb-3">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+            <div>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    {{ ui.incident_status_badge(incident.status) }}
+                    {{ ui.priority_badge(incident.priority) }}
+                    {% if incident.isOverdue() %}<span class="badge badge-pilotis bg-danger">SLA dépassé</span>{% endif %}
+                    {% if incident.environment %}
+                        <span class="badge badge-pilotis bg-secondary">{{ envLabels[incident.environment] ?? incident.environment }}</span>
+                    {% endif %}
+                </div>
+                <h2 class="h4 mb-1">{{ incident.title }}</h2>
+                <div class="text-muted small">
+                    Découvert le {{ incident.discoveredAt|date('d/m/Y à H:i') }}
+                    · Déclaré le {{ incident.openedAt|date('d/m/Y à H:i') }}
+                </div>
+            </div>
+            <div class="text-end small">
+                {% if incident.dueDate %}
+                    <div class="fw-semibold {{ incident.isOverdue() ? 'text-danger' : 'text-success' }}">
+                        Échéance SLA : {{ incident.dueDate|date('d/m/Y') }}
+                    </div>
+                    {% set daysLeft = incident.daysUntilDue %}
+                    {% if daysLeft is not null and incident.status.value not in ['resolved', 'closed'] %}
+                        <div class="text-muted">
+                            {% if daysLeft < 0 %}Dépassé de {{ daysLeft|abs }} jour(s){% elseif daysLeft == 0 %}Échéance aujourd'hui{% else %}J-{{ daysLeft }}{% endif %}
+                        </div>
+                    {% endif %}
+                    <div class="text-muted">SLA priorité {{ incident.priority.label|lower }} : {{ slaDays }} jour(s)</div>
+                {% endif %}
+            </div>
+        </div>
+        {% if incident.description %}
+            <p class="mb-0">{{ incident.description|nl2br }}</p>
+        {% else %}
+            <p class="text-muted mb-0 small">Aucune description.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-8">
+        <div class="card-pilotis h-100">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Détails & diagnostic</div>
+            <div class="card-body">
+                <div class="row g-3 small">
+                    <div class="col-md-6">
+                        <span class="text-muted d-block">Intervenant assigné</span>
+                        <strong>{{ incident.assigneeLabel }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted d-block">Service impacté</span>
+                        <strong>{{ incident.department ? incident.department.name : '—' }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted d-block">Déclaré par</span>
+                        <strong>{{ incident.reportedBy ? incident.reportedBy.fullName : '—' }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted d-block">Environnement</span>
+                        <strong>{{ incident.environment ? (envLabels[incident.environment] ?? incident.environment) : '—' }}</strong>
+                    </div>
+                </div>
+
+                {% if incident.reproductionSteps %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="fw-semibold small mb-1"><i class="bi bi-list-ol me-1"></i>Étapes de reproduction</div>
+                        <div class="small">{{ incident.reproductionSteps|nl2br }}</div>
+                    </div>
+                {% endif %}
+
+                {% if incident.impact %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="fw-semibold small mb-1"><i class="bi bi-exclamation-octagon me-1"></i>Impact métier</div>
+                        <div class="small">{{ incident.impact|nl2br }}</div>
+                    </div>
+                {% endif %}
+
+                {% if incident.rootCause %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="fw-semibold small mb-1"><i class="bi bi-search me-1"></i>Cause racine</div>
+                        <div class="small">{{ incident.rootCause|nl2br }}</div>
+                    </div>
+                {% endif %}
+
+                <div class="mt-3 pt-3 border-top">
+                    <div class="fw-semibold small mb-1"><i class="bi bi-wrench me-1"></i>Solution apportée</div>
+                    {% if incident.solution %}
+                        <div class="small">{{ incident.solution|nl2br }}</div>
+                    {% else %}
+                        <div class="text-muted small">Aucune solution documentée pour l'instant.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card-pilotis h-100">
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Chronologie</div>
+            <div class="card-body">
+                <div class="incident-timeline">
+                    <div class="incident-timeline-item">
+                        <div class="incident-timeline-dot"></div>
+                        <div class="small">
+                            <strong>Découverte du bug</strong>
+                            <div class="text-muted">{{ incident.discoveredAt|date('d/m/Y à H:i') }}</div>
+                        </div>
+                    </div>
+                    <div class="incident-timeline-item">
+                        <div class="incident-timeline-dot"></div>
+                        <div class="small">
+                            <strong>Déclaration</strong>
+                            <div class="text-muted">{{ incident.openedAt|date('d/m/Y à H:i') }}</div>
+                        </div>
+                    </div>
+                    {% if incident.dueDate %}
+                        <div class="incident-timeline-item">
+                            <div class="incident-timeline-dot {{ incident.isOverdue() ? 'overdue' : '' }}"></div>
+                            <div class="small">
+                                <strong>Échéance SLA</strong>
+                                <div class="text-muted">{{ incident.dueDate|date('d/m/Y') }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if incident.resolvedAt %}
+                        <div class="incident-timeline-item">
+                            <div class="incident-timeline-dot resolved"></div>
+                            <div class="small">
+                                <strong>Résolution</strong>
+                                <div class="text-muted">{{ incident.resolvedAt|date('d/m/Y à H:i') }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card-pilotis">
+            <div class="card-header"><i class="bi bi-chat-dots me-2"></i>Commentaires ({{ incident.comments|length }})</div>
+            {% for comment in incident.comments %}
+                <div class="card-body border-bottom py-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="user-avatar" style="width:28px;height:28px;font-size:0.7rem;">{{ comment.author.firstName|first|upper }}</div>
+                        <strong class="small">{{ comment.author.fullName }}</strong>
+                        <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
+                    </div>
+                    <div class="small">{{ comment.content|nl2br }}</div>
+                </div>
+            {% else %}
+                <div class="card-body text-muted small">Aucun commentaire pour l'instant.</div>
+            {% endfor %}
+            <div class="card-body" style="background: var(--bg-input);">
+                {{ form_start(commentForm) }}
+                    {{ form_row(commentForm.content) }}
+                    <button class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-send"></i> Publier</button>
+                {{ form_end(commentForm) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card-pilotis">
+            <div class="card-header"><i class="bi bi-paperclip me-2"></i>Documents ({{ incident.documents|length }})</div>
+            <div class="card-body p-0">
+                {% if incident.documents %}
+                    <table class="table-pilotis w-100 mb-0">
+                        <tbody>
+                        {% for document in incident.documents %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-file-earmark me-1"></i>
+                                    <a href="{{ path('app_incident_document_download', {id: document.id}) }}">{{ document.originalFilename }}</a>
+                                    <div class="small text-muted">{{ (document.size / 1024)|round(1) }} Ko · {{ document.uploadedBy.fullName }} · {{ document.createdAt|date('d/m/Y') }}</div>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ path('app_incident_document_delete', {id: document.id}) }}" onsubmit="return confirm('Supprimer ce document ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete-incident-document-' ~ document.id) }}">
+                                        <button class="btn btn-sm btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="p-3 text-muted small">Aucun document joint.</div>
+                {% endif %}
+            </div>
+            <div class="card-body border-top" style="background: var(--bg-input);">
+                {{ form_start(documentForm, {attr: {enctype: 'multipart/form-data'}}) }}
+                    {{ form_row(documentForm.file) }}
+                    <button class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-upload"></i> Téléverser</button>
+                {{ form_end(documentForm) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

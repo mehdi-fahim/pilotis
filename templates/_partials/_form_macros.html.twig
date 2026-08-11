@@ -1,0 +1,39 @@
+{% macro form_page_header(title, subtitle = null, back_url = null, back_label = 'Retour') %}
+<div class="form-page-header">
+    <div>
+        <h2 class="form-page-title">{{ title }}</h2>
+        {% if subtitle %}<p class="form-page-subtitle">{{ subtitle|raw }}</p>{% endif %}
+    </div>
+    {% if back_url %}
+        <a href="{{ back_url }}" class="btn btn-outline-secondary btn-pilotis"><i class="bi bi-arrow-left"></i> {{ back_label }}</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro form_section(title, icon = 'info-circle', content) %}
+<div class="form-section">
+    <div class="form-section-header">
+        <span class="form-section-icon"><i class="bi bi-{{ icon }}"></i></span>
+        <span class="form-section-title">{{ title }}</span>
+    </div>
+    <div class="form-section-body">
+        {{ content }}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro form_actions(submit_label = 'Enregistrer', cancel_url = null, cancel_label = 'Annuler') %}
+<div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-pilotis"><i class="bi bi-check-lg"></i> {{ submit_label }}</button>
+    {% if cancel_url %}
+        <a href="{{ cancel_url }}" class="btn btn-outline-secondary btn-pilotis">{{ cancel_label }}</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro form_delete(action_url, token_id, label = 'Supprimer') %}
+<form method="post" action="{{ action_url }}" class="form-delete" onsubmit="return confirm('Confirmer la suppression ?');">
+    <input type="hidden" name="_token" value="{{ csrf_token(token_id) }}">
+    <button class="btn btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i> {{ label }}</button>
+</form>
+{% endmacro %}
