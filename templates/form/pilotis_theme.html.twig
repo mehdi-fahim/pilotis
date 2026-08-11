@@ -117,7 +117,7 @@
             {%- for child in form %}
                 {% set enum = form_choice_data(form.vars.choices, child.vars.value) %}
                 {% set choiceLabel = form_choice_label(form.vars.choices, child.vars.value, child.vars.label) %}
-                {% set badge = enum ? enum.badgeClass() : 'secondary' %}
+                {% set badge = enum and enum.badgeClass is defined ? enum.badgeClass() : 'secondary' %}
                 <label class="pill-option pill-option-enum pill-badge-{{ badge }} pill-value-{{ child.vars.value }}" for="{{ child.vars.id }}">
                     {{ pills.pill_radio(child) }}
                     <span class="pill-content">

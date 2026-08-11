@@ -21,6 +21,16 @@ enum TaskStatus: string
         };
     }
 
+    public function badgeClass(): string
+    {
+        return match ($this) {
+            self::TODO => 'secondary',
+            self::IN_PROGRESS => 'primary',
+            self::REVIEW => 'warning',
+            self::DONE => 'success',
+        };
+    }
+
     public function kanbanColumn(): string
     {
         return $this->value;
