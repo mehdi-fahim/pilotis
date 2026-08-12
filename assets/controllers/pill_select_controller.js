@@ -28,18 +28,21 @@ export default class extends Controller {
             return;
         }
 
-        const departmentField = form.querySelector('[name*="[department]"]');
-        if (!departmentField) {
-            return;
-        }
-
         const filter = () => {
             const selectedDept = this.getSelectedDepartmentId(form);
             this.element.querySelectorAll('.pill-option-actor').forEach((label) => {
                 const deptId = label.dataset.departmentId ?? '';
-                const show = !selectedDept || !deptId || deptId === selectedDept;
+                const show = !selectedDept || !deptId || String(deptId) === String(selectedDept);
                 label.classList.toggle('is-hidden', !show);
+
+                if (!show) {
+                    const input = label.querySelector('.pill-input');
+                    if (input?.checked) {
+                        input.checked = false;
+                    }
+                }
             });
+            this.syncSelectedStyles();
         };
 
         form.querySelectorAll('[name*="[department]"]').forEach((input) => {
@@ -51,6 +54,11 @@ export default class extends Controller {
 
     getSelectedDepartmentId(form) {
         const checked = form.querySelector('[name*="[department]"]:checked');
-        return checked?.value ?? '';
+        if (checked && checked.value !== '') {
+            return checked.value;
+        }
+
+        const select = form.querySelector('select[name*="[department]"]');
+        return select?.value ?? '';
     }
 }

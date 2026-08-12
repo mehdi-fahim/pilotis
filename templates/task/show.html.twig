@@ -24,8 +24,10 @@
                     <div class="col-sm-6"><strong>Début</strong><br>{{ task.startDate ? task.startDate|date('d/m/Y') : '—' }}</div>
                     <div class="col-sm-6"><strong>Fin / échéance</strong><br>{{ task.dueDate ? task.dueDate|date('d/m/Y') : '—' }}</div>
                 </div>
-                <div class="mt-3 d-flex gap-2">
+                {% import '_partials/_form_macros.html.twig' as f %}
+                <div class="mt-3 d-flex flex-wrap gap-2">
                     <a href="{{ path('app_task_edit', {id: task.id}) }}" class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+                    {{ f.form_delete(path('app_task_delete', {id: task.id}), 'delete-task-' ~ task.id, 'Supprimer', 'btn btn-outline-danger btn-sm btn-pilotis') }}
                     <a href="{{ path('app_kanban_board', {projectId: task.project.id}) }}" class="btn btn-outline-secondary btn-sm btn-pilotis"><i class="bi bi-kanban"></i> Kanban</a>
                 </div>
             </div>

@@ -28,9 +28,14 @@
             {{ f.form_section('Incident', 'exclamation-triangle', infos) }}
 
             {% set assign %}
-                <div class="row g-3">
+                <div
+                    class="row g-3"
+                    data-controller="actor-filter"
+                    data-actor-filter-url-value="{{ path('app_incident_actors_json') }}"
+                    data-actor-filter-field-name-value="{{ form.assignedActors.vars.full_name }}[]"
+                >
                     <div class="col-md-6">{{ form_row(form.department) }}</div>
-                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                    <div class="col-12">{{ form_row(form.assignedActors) }}</div>
                 </div>
             {% endset %}
             {{ f.form_section('Rattachements', 'diagram-3', assign) }}
@@ -42,6 +47,13 @@
                 </div>
             {% endset %}
             {{ f.form_section('Diagnostic', 'search', diag) }}
+
+            {% set solution %}
+                <div class="row g-3">
+                    <div class="col-12">{{ form_row(form.solution) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Solution', 'wrench', solution) }}
 
             {{ f.form_actions('Créer l\'incident', path('app_incident_index')) }}
         {{ form_end(form) }}

@@ -48,7 +48,8 @@ final class TaskController extends AbstractController
     {
         $dto = new TaskDto();
 
-        $projectId = $request->query->getInt('projectId');
+        $projectId = $request->query->get('projectId');
+        $projectId = is_numeric($projectId) ? (int) $projectId : 0;
         if ($projectId <= 0) {
             $this->addFlash('info', 'Créez une tâche depuis la fiche d\'un projet.');
 
@@ -61,17 +62,17 @@ final class TaskController extends AbstractController
         }
         $dto->project = $project;
 
-        $departmentId = $request->query->getInt('department');
-        if ($departmentId > 0) {
-            $department = $this->departmentRepository->find($departmentId);
+        $departmentId = $request->query->get('department');
+        if (is_numeric($departmentId) && (int) $departmentId > 0) {
+            $department = $this->departmentRepository->find((int) $departmentId);
             if ($department !== null) {
                 $dto->department = $department;
             }
         }
 
-        $actorId = $request->query->getInt('actor');
-        if ($actorId > 0) {
-            $actor = $this->actorRepository->find($actorId);
+        $actorId = $request->query->get('actor');
+        if (is_numeric($actorId) && (int) $actorId > 0) {
+            $actor = $this->actorRepository->find((int) $actorId);
             if ($actor !== null) {
                 $dto->assignedActor = $actor;
             }

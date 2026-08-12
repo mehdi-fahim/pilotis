@@ -37,15 +37,20 @@ export default class extends Controller {
         'sparkTasks',
         'sparkIncidentsOpened',
         'sparkIncidentsResolved',
+        'defaultViewButton',
     ];
 
     connect() {
         this.charts = [];
         this.incidentChartsRendered = false;
+        this.storageKey = 'pilotis-default-view';
+        this.activeView = 'projects';
 
         requestAnimationFrame(() => {
+            this.applyDefaultView();
             this.renderProjectCharts();
             this.bindTabEvents();
+            this.updateDefaultViewButton();
         });
     }
 
@@ -57,14 +62,75 @@ export default class extends Controller {
     bindTabEvents() {
         document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
             tab.addEventListener('shown.bs.tab', (event) => {
-                if (event.target.getAttribute('data-dashboard-tab') === 'incidents') {
+                const view = event.target.getAttribute('data-dashboard-tab') || 'projects';
+                this.activeView = view;
+                if (view === 'incidents') {
                     this.renderIncidentChartsOnce();
                 }
                 this.charts.forEach((chart) => chart.resize());
+                this.updateDefaultViewButton();
             });
         });
     }
 
+    applyDefaultView() {
+        let preferred = 'projects';
+        try {
+            const stored = localStorage.getItem(this.storageKey);
+            if (stored === 'projects' || stored === 'incidents') {
+                preferred = stored;
+            }
+        } catch (e) {
+            preferred = 'projects';
+        }
+
+        this.activeView = preferred;
+        if (preferred === 'incidents') {
+            const button = document.getElementById('tab-btn-incidents');
+            if (button && window.bootstrap?.Tab) {
+                window.bootstrap.Tab.getOrCreateInstance(button).show();
+                this.renderIncidentChartsOnce();
+            }
+        }
+    }
+
+    setDefaultView() {
+        try {
+            localStorage.setItem(this.storageKey, this.activeView);
+        } catch (e) {
+            // ignore storage errors
+        }
+        this.updateDefaultViewButton(true);
+    }
+
+    updateDefaultViewButton(justSaved = false) {
+        if (!this.hasDefaultViewButtonTarget) {
+            return;
+        }
+
+        let preferred = 'projects';
+        try {
+            const stored = localStorage.getItem(this.storageKey);
+            if (stored === 'projects' || stored === 'incidents') {
+                preferred = stored;
+            }
+        } catch (e) {
+            preferred = 'projects';
+        }
+
+        const isCurrentDefault = preferred === this.activeView;
+        const label = this.activeView === 'incidents' ? 'Incidents' : 'Projets';
+
+        if (justSaved || isCurrentDefault) {
+            this.defaultViewButtonTarget.innerHTML = `<i class="bi bi-pin-fill me-1"></i> Vue par défaut : ${label}`;
+            this.defaultViewButtonTarget.classList.remove('btn-outline-secondary');
+            this.defaultViewButtonTarget.classList.add('btn-outline-primary');
+        } else {
+            this.defaultViewButtonTarget.innerHTML = '<i class="bi bi-pin-angle me-1"></i> Définir comme vue par défaut';
+            this.defaultViewButtonTarget.classList.add('btn-outline-secondary');
+            this.defaultViewButtonTarget.classList.remove('btn-outline-primary');
+        }
+    }
     trackChart(chart) {
         this.charts.push(chart);
 

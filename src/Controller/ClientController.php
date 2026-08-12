@@ -10,6 +10,8 @@ use App\DTO\ClientDto;
 use App\Form\ClientFormType;
 use App\Repository\ClientRepository;
 use App\Service\ActivityLogger;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,15 +25,38 @@ final class ClientController extends AbstractController
         private readonly ClientRepository $clientRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ActivityLogger $activityLogger,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_client_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $q = $this->filters->string($request, 'q');
+
         return $this->render('client/index.html.twig', [
-            'clients' => $this->clientRepository->findBy([], ['name' => 'ASC']),
+            'clients' => $this->clientRepository->findFiltered($q),
+            'filters' => ['q' => $q ?? ''],
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_client_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $q = $this->filters->string($request, 'q');
+        $rows = [];
+        foreach ($this->clientRepository->findFiltered($q) as $client) {
+            $rows[] = [
+                $client->getName(),
+                $client->getCompany(),
+                $client->getEmail(),
+                $client->getPhone(),
+                $client->getAddress(),
+            ];
+        }
+
+        return $this->csvExporter->export('clients.csv', ['Nom', 'Entreprise', 'E-mail', 'Téléphone', 'Adresse'], $rows);
     }
 
     #[Route('/new', name: 'app_client_new', methods: ['GET', 'POST'])]

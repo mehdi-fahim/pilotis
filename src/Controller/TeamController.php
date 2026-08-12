@@ -12,6 +12,8 @@ use App\Form\TeamFormType;
 use App\Form\TeamMemberFormType;
 use App\Repository\TeamRepository;
 use App\Service\ActivityLogger;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use App\Service\TeamService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,15 +29,36 @@ final class TeamController extends AbstractController
         private readonly TeamService $teamService,
         private readonly EntityManagerInterface $entityManager,
         private readonly ActivityLogger $activityLogger,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_team_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $q = $this->filters->string($request, 'q');
+
         return $this->render('team/index.html.twig', [
-            'teams' => $this->teamRepository->findBy([], ['name' => 'ASC']),
+            'teams' => $this->teamRepository->findFiltered($q),
+            'filters' => ['q' => $q ?? ''],
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_team_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $q = $this->filters->string($request, 'q');
+        $rows = [];
+        foreach ($this->teamRepository->findFiltered($q) as $team) {
+            $rows[] = [
+                $team->getName(),
+                $team->getOwner()->getFullName(),
+                $team->getMembers()->count(),
+            ];
+        }
+
+        return $this->csvExporter->export('equipes.csv', ['Nom', 'Propriétaire', 'Membres'], $rows);
     }
 
     #[Route('/new', name: 'app_team_new', methods: ['GET', 'POST'])]

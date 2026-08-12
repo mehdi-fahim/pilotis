@@ -16,7 +16,10 @@ final class IncidentDto
     public IncidentStatus $status = IncidentStatus::OPEN;
     public Priority $priority = Priority::MEDIUM;
     public ?Department $department = null;
-    public ?Actor $assignedActor = null;
+
+    /** @var list<Actor> */
+    public array $assignedActors = [];
+
     public ?\DateTimeImmutable $discoveredAt = null;
     public ?string $solution = null;
     public ?string $reproductionSteps = null;

@@ -25,7 +25,15 @@
                         <td>{{ document.uploadedBy.fullName }}</td>
                         <td class="text-end">
                             <a href="{{ path('app_document_download', {id: document.id}) }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
-                            <form method="post" action="{{ path('app_document_delete', {id: document.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer ce document ?');">
+                            <form
+                                method="post"
+                                action="{{ path('app_document_delete', {id: document.id}) }}"
+                                class="d-inline"
+                                data-confirm="Voulez-vous vraiment supprimer ce document ?"
+                                data-confirm-title="Supprimer le document ?"
+                                data-confirm-label="Supprimer"
+                                data-confirm-variant="danger"
+                            >
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete-document-' ~ document.id) }}">
                                 <button class="btn btn-sm btn-outline-danger">Supprimer</button>
                             </form>

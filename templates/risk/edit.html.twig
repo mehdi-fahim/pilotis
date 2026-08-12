@@ -11,7 +11,15 @@
         {{ form_row(form.mitigationPlan) }}{{ form_row(form.status) }}
         <button class="btn btn-primary">Enregistrer</button>
     {{ form_end(form) }}
-    <form method="post" action="{{ path('app_risk_delete', {projectId: project.id, id: risk.id}) }}" class="mt-3 d-inline" onsubmit="return confirm('Supprimer ce risque ?');">
+    <form
+        method="post"
+        action="{{ path('app_risk_delete', {projectId: project.id, id: risk.id}) }}"
+        class="mt-3 d-inline"
+        data-confirm="Voulez-vous vraiment supprimer ce risque ?"
+        data-confirm-title="Supprimer le risque ?"
+        data-confirm-label="Supprimer"
+        data-confirm-variant="danger"
+    >
         <input type="hidden" name="_token" value="{{ csrf_token('delete-risk-' ~ risk.id) }}">
         <button class="btn btn-outline-danger">Supprimer</button>
     </form>

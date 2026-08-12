@@ -9,7 +9,11 @@
     <p><strong>E-mail :</strong> {{ client.email }}</p>
     <p><strong>Téléphone :</strong> {{ client.phone }}</p>
     <p><strong>Adresse :</strong> {{ client.address }}</p>
-    <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-primary">Modifier</a>
+    {% import '_partials/_form_macros.html.twig' as f %}
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-primary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+        {{ f.form_delete(path('app_client_delete', {id: client.id}), 'delete-client-' ~ client.id) }}
+    </div>
 </div></div>
 <div class="card"><div class="card-header">Projets</div>
     <ul class="list-group list-group-flush">

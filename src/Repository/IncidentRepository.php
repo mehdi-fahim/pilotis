@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Domain\Entity\Department;
 use App\Domain\Entity\Incident;
 use App\Domain\Enum\IncidentStatus;
 use App\Domain\Enum\Priority;
@@ -98,5 +99,51 @@ class IncidentRepository extends ServiceEntityRepository
             ->setParameter('end', $end)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * @return list<Incident>
+     */
+    public function findFiltered(
+        ?string $q = null,
+        ?IncidentStatus $status = null,
+        ?Priority $priority = null,
+        ?Department $department = null,
+        bool $overdueOnly = false,
+    ): array {
+        $qb = $this->createQueryBuilder('i')
+            ->leftJoin('i.department', 'd')->addSelect('d')
+            ->leftJoin('i.assignedActors', 'a')->addSelect('a')
+            ->orderBy('i.openedAt', 'DESC');
+
+        if ($q !== null && $q !== '') {
+            $qb->andWhere('LOWER(i.title) LIKE :q OR LOWER(i.reference) LIKE :q OR LOWER(COALESCE(i.description, \'\')) LIKE :q')
+                ->setParameter('q', '%' . mb_strtolower($q) . '%');
+        }
+
+        if ($status !== null) {
+            $qb->andWhere('i.status = :status')
+                ->setParameter('status', $status->value);
+        }
+
+        if ($priority !== null) {
+            $qb->andWhere('i.priority = :priority')
+                ->setParameter('priority', $priority->value);
+        }
+
+        if ($department !== null) {
+            $qb->andWhere('i.department = :department')
+                ->setParameter('department', $department);
+        }
+
+        if ($overdueOnly) {
+            $qb->andWhere('i.dueDate IS NOT NULL')
+                ->andWhere('i.dueDate < :today')
+                ->andWhere('i.status NOT IN (:closedStatuses)')
+                ->setParameter('today', new \DateTimeImmutable('today'))
+                ->setParameter('closedStatuses', [IncidentStatus::RESOLVED->value, IncidentStatus::CLOSED->value]);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

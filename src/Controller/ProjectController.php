@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Domain\Entity\Project;
+use App\Domain\Enum\Priority;
+use App\Domain\Enum\ProjectStatus;
 use App\DTO\ProjectDto;
 use App\Form\ProjectFormType;
 use App\Repository\ProjectRepository;
 use App\Service\ActivityLogger;
 use App\Service\AiSummaryService;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use App\Service\ProjectService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,15 +30,82 @@ final class ProjectController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly ActivityLogger $activityLogger,
         private readonly AiSummaryService $aiSummaryService,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_project_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        [$q, $status, $priority, $overdueOnly] = $this->resolveProjectFilters($request);
+
         return $this->render('project/index.html.twig', [
-            'projects' => $this->projectRepository->findBy([], ['name' => 'ASC']),
+            'projects' => $this->projectRepository->findFiltered($q, $status, $priority, $overdueOnly),
+            'filters' => [
+                'q' => $q ?? '',
+                'status' => $status?->value ?? '',
+                'priority' => $priority?->value ?? '',
+                'overdue' => $overdueOnly,
+            ],
+            'statusOptions' => $this->enumOptions(ProjectStatus::cases()),
+            'priorityOptions' => $this->enumOptions(Priority::cases()),
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_project_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        [$q, $status, $priority, $overdueOnly] = $this->resolveProjectFilters($request);
+        $projects = $this->projectRepository->findFiltered($q, $status, $priority, $overdueOnly);
+
+        $rows = [];
+        foreach ($projects as $project) {
+            $rows[] = [
+                $project->getName(),
+                $project->getStatus()->label(),
+                $project->getPriority()->label(),
+                $project->getHealthStatus()->label(),
+                round($project->getProgressPercent(), 1),
+                $project->getStartDate()->format('d/m/Y'),
+                $project->getEndDate()?->format('d/m/Y'),
+                $project->isOverdue() ? 'Oui' : 'Non',
+            ];
+        }
+
+        return $this->csvExporter->export('projets.csv', [
+            'Projet', 'Statut', 'Priorité', 'Santé', 'Avancement %', 'Début', 'Fin', 'En retard',
+        ], $rows);
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?ProjectStatus, 2: ?Priority, 3: bool}
+     */
+    private function resolveProjectFilters(Request $request): array
+    {
+        /** @var ?ProjectStatus $status */
+        $status = $this->filters->enum($request, 'status', ProjectStatus::class);
+        /** @var ?Priority $priority */
+        $priority = $this->filters->enum($request, 'priority', Priority::class);
+
+        return [
+            $this->filters->string($request, 'q'),
+            $status,
+            $priority,
+            $this->filters->bool($request, 'overdue'),
+        ];
+    }
+
+    /**
+     * @param list<\BackedEnum&object{label(): string}> $cases
+     * @return list<array{value: string, label: string}>
+     */
+    private function enumOptions(array $cases): array
+    {
+        return array_map(
+            static fn ($case): array => ['value' => $case->value, 'label' => $case->label()],
+            $cases,
+        );
     }
 
     #[Route('/new', name: 'app_project_new', methods: ['GET', 'POST'])]

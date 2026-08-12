@@ -7,7 +7,11 @@
 <div class="card mb-3"><div class="card-body">
     <p>{{ team.description }}</p>
     <p><strong>Propriétaire :</strong> {{ team.owner.fullName }}</p>
-    <a href="{{ path('app_team_edit', {id: team.id}) }}" class="btn btn-primary">Modifier</a>
-    <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-outline-secondary">Gérer les membres</a>
+    {% import '_partials/_form_macros.html.twig' as f %}
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ path('app_team_edit', {id: team.id}) }}" class="btn btn-primary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+        <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-outline-secondary btn-pilotis">Gérer les membres</a>
+        {{ f.form_delete(path('app_team_delete', {id: team.id}), 'delete-team-' ~ team.id) }}
+    </div>
 </div></div>
 {% endblock %}

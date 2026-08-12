@@ -13,6 +13,20 @@
     <a href="{{ path('app_actor_new') }}" class="btn btn-primary btn-pilotis"><i class="bi bi-plus-lg"></i> Nouvel acteur</a>
 </div>
 
+{% set departmentOptions = [] %}
+{% for department in departments %}
+    {% set departmentOptions = departmentOptions|merge([{value: department.id, label: department.name}]) %}
+{% endfor %}
+
+{% include '_partials/_list_filters.html.twig' with {
+    reset_path: path('app_actor_index'),
+    export_path: path('app_actor_export', app.request.query.all),
+    filters: [
+        {type: 'search', name: 'q', label: 'Recherche', value: filters.q, placeholder: 'Nom, e-mail, fonction…', col: 'col-md-5'},
+        {type: 'select', name: 'department', label: 'Service', value: filters.department, options: departmentOptions, placeholder: 'Tous les services', col: 'col-md-3'},
+    ]
+} %}
+
 <div class="card-pilotis">
     {% if actors %}
         <div class="table-responsive">
@@ -32,7 +46,7 @@
             </table>
         </div>
     {% else %}
-        {{ ui.empty_state('person', 'Aucun acteur.', path('app_actor_new'), 'Ajouter un acteur') }}
+        {{ ui.empty_state('person', 'Aucun acteur trouvé.', path('app_actor_new'), 'Ajouter un acteur') }}
     {% endif %}
 </div>
 {% endblock %}

@@ -16,11 +16,13 @@
             <h1 class="h3 fw-bold mb-1">{{ project.name }}</h1>
             <p class="mb-0 opacity-75">Projet interne{% if project.endDate %} · Échéance {{ project.endDate|date('d/m/Y') }}{% endif %}</p>
         </div>
+        {% import '_partials/_form_macros.html.twig' as f %}
         <div class="d-flex flex-wrap gap-2">
             <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="btn btn-outline-secondary btn-sm btn-pilotis"><i class="bi bi-kanban"></i> Kanban</a>
             <a href="{{ path('app_timeline_project', {projectId: project.id}) }}" class="btn btn-outline-secondary btn-sm btn-pilotis"><i class="bi bi-bar-chart-steps"></i> Timeline</a>
-            <a href="{{ path('app_steering_committee_pdf', {id: project.id}) }}" class="btn btn-outline-light btn-sm btn-pilotis"><i class="bi bi-file-pdf"></i> PDF</a>
+            <a href="{{ path('app_steering_committee_pdf', {id: project.id}) }}" class="btn btn-outline-secondary btn-sm btn-pilotis"><i class="bi bi-file-pdf"></i> PDF</a>
             <a href="{{ path('app_project_edit', {id: project.id}) }}" class="btn btn-primary btn-sm btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+            {{ f.form_delete(path('app_project_delete', {id: project.id}), 'delete-project-' ~ project.id, 'Supprimer', 'btn btn-outline-danger btn-sm btn-pilotis') }}
         </div>
     </div>
     <div class="row g-3 mt-3">

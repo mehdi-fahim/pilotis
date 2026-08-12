@@ -9,6 +9,9 @@ use App\Domain\Entity\Department;
 use App\DTO\ActorDto;
 use App\Form\ActorFormType;
 use App\Repository\ActorRepository;
+use App\Repository\DepartmentRepository;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,16 +25,43 @@ final class ActorController extends AbstractController
 {
     public function __construct(
         private readonly ActorRepository $actorRepository,
+        private readonly DepartmentRepository $departmentRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_actor_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $q = $this->filters->string($request, 'q');
+        $departmentId = $this->filters->intId($request, 'department');
+
         return $this->render('actor/index.html.twig', [
-            'actors' => $this->actorRepository->findBy([], ['lastName' => 'ASC', 'firstName' => 'ASC']),
+            'actors' => $this->actorRepository->findFiltered($q, $departmentId),
+            'filters' => ['q' => $q ?? '', 'department' => $departmentId],
+            'departments' => $this->departmentRepository->findBy([], ['name' => 'ASC']),
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_actor_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $q = $this->filters->string($request, 'q');
+        $departmentId = $this->filters->intId($request, 'department');
+        $rows = [];
+        foreach ($this->actorRepository->findFiltered($q, $departmentId) as $actor) {
+            $rows[] = [
+                $actor->getFullName(),
+                $actor->getRole(),
+                $actor->getDepartment()?->getName(),
+                $actor->getEmail(),
+                $actor->getPhone(),
+            ];
+        }
+
+        return $this->csvExporter->export('acteurs.csv', ['Nom', 'Fonction', 'Service', 'E-mail', 'Téléphone'], $rows);
     }
 
     #[Route('/new', name: 'app_actor_new', methods: ['GET', 'POST'])]

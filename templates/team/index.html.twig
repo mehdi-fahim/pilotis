@@ -6,26 +6,37 @@
 {% block body %}
 <div class="d-flex justify-content-between mb-3">
     <h2 class="h4 mb-0">Équipes</h2>
-    <a href="{{ path('app_team_new') }}" class="btn btn-primary">Nouvelle équipe</a>
+    <a href="{{ path('app_team_new') }}" class="btn btn-primary btn-pilotis">Nouvelle équipe</a>
 </div>
-<div class="card"><div class="table-responsive">
-    <table class="table table-hover mb-0">
-        <thead><tr><th>Nom</th><th>Propriétaire</th><th>Membres</th><th></th></tr></thead>
-        <tbody>
-        {% for team in teams %}
-            <tr>
-                <td>{{ team.name }}</td>
-                <td>{{ team.owner.fullName }}</td>
-                <td><span class="badge bg-secondary">{{ team.members|length }}</span></td>
-                <td class="text-end">
-                    <a href="{{ path('app_team_show', {id: team.id}) }}" class="btn btn-sm btn-outline-primary">Voir</a>
-                    <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-sm btn-outline-secondary">Membres</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr><td colspan="4" class="text-muted">Aucune équipe.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div></div>
+
+{% include '_partials/_list_filters.html.twig' with {
+    reset_path: path('app_team_index'),
+    export_path: path('app_team_export', app.request.query.all),
+    filters: [
+        {type: 'search', name: 'q', label: 'Recherche', value: filters.q, placeholder: 'Nom ou propriétaire…', col: 'col-md-6'},
+    ]
+} %}
+
+<div class="card-pilotis">
+    <div class="table-responsive">
+        <table class="table table-pilotis mb-0">
+            <thead><tr><th>Nom</th><th>Propriétaire</th><th>Membres</th><th></th></tr></thead>
+            <tbody>
+            {% for team in teams %}
+                <tr>
+                    <td>{{ team.name }}</td>
+                    <td>{{ team.owner.fullName }}</td>
+                    <td><span class="badge badge-pilotis bg-secondary">{{ team.members|length }}</span></td>
+                    <td class="text-end">
+                        <a href="{{ path('app_team_show', {id: team.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a>
+                        <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-sm btn-outline-secondary btn-pilotis">Membres</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4" class="text-muted p-3">Aucune équipe trouvée.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

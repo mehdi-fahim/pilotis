@@ -26,4 +26,20 @@ class ClientRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<Client>
+     */
+    public function findFiltered(?string $q = null): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->orderBy('c.name', 'ASC');
+
+        if ($q !== null && $q !== '') {
+            $qb->andWhere('LOWER(c.name) LIKE :q OR LOWER(COALESCE(c.company, \'\')) LIKE :q OR LOWER(COALESCE(c.email, \'\')) LIKE :q')
+                ->setParameter('q', '%' . mb_strtolower($q) . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

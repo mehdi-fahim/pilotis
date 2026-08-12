@@ -102,10 +102,11 @@ final class AppFixtures extends Fixture
                 ->setStatus($status)
                 ->setPriority($priority)
                 ->setDepartment($department)
-                ->setAssignedActor($actor)
                 ->setReportedBy($admin)
                 ->setOpenedAt(new \DateTimeImmutable(sprintf('%+d days', random_int(-8, -1))));
-            if ($dueOffset !== null) {
+            if ($actor !== null) {
+                $incident->addAssignedActor($actor);
+            }            if ($dueOffset !== null) {
                 $incident->setDueDate(new \DateTimeImmutable(sprintf('%+d days', $dueOffset)));
             }
             if (!$status->isOpen()) {

@@ -25,27 +25,36 @@
             {{ f.form_section('Incident', 'exclamation-triangle', infos) }}
 
             {% set assign %}
-                <div class="row g-3">
+                <div
+                    class="row g-3"
+                    data-controller="actor-filter"
+                    data-actor-filter-url-value="{{ path('app_incident_actors_json') }}"
+                    data-actor-filter-field-name-value="{{ form.assignedActors.vars.full_name }}[]"
+                >
                     <div class="col-md-6">{{ form_row(form.department) }}</div>
-                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                    <div class="col-12">{{ form_row(form.assignedActors) }}</div>
                 </div>
             {% endset %}
             {{ f.form_section('Rattachements', 'diagram-3', assign) }}
 
-            {% set resolution %}
+            {% set analyse %}
                 <div class="row g-3">
                     <div class="col-12">{{ form_row(form.reproductionSteps) }}</div>
                     <div class="col-12">{{ form_row(form.impact) }}</div>
                     <div class="col-12">{{ form_row(form.rootCause) }}</div>
+                </div>
+            {% endset %}
+            {{ f.form_section('Analyse', 'search', analyse) }}
+
+            {% set solution %}
+                <div class="row g-3">
                     <div class="col-12">{{ form_row(form.solution) }}</div>
                 </div>
             {% endset %}
-            {{ f.form_section('Analyse & résolution', 'wrench', resolution) }}
+            {{ f.form_section('Solution', 'wrench', solution) }}
 
             {{ f.form_actions('Enregistrer', path('app_incident_show', {id: incident.id})) }}
         {{ form_end(form) }}
-
-        {{ f.form_delete(path('app_incident_delete', {id: incident.id}), 'delete-incident-' ~ incident.id) }}
     </div>
 </div>
 {% endblock %}

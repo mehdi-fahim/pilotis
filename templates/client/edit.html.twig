@@ -10,9 +10,5 @@
         {{ form_row(form.phone) }}{{ form_row(form.address) }}
         <button class="btn btn-primary">Enregistrer</button>
     {{ form_end(form) }}
-    <form method="post" action="{{ path('app_client_delete', {id: client.id}) }}" class="mt-3 d-inline" onsubmit="return confirm('Supprimer ce client ?');">
-        <input type="hidden" name="_token" value="{{ csrf_token('delete-client-' ~ client.id) }}">
-        <button class="btn btn-outline-danger">Supprimer</button>
-    </form>
 </div></div>
 {% endblock %}

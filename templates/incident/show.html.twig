@@ -6,9 +6,26 @@
 {% block breadcrumb %}Incidents / {{ incident.reference }}{% endblock %}
 
 {% block page_actions %}
-    <a href="{{ path('app_incident_edit', {id: incident.id}) }}" class="btn btn-primary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+    {% import '_partials/_form_macros.html.twig' as f %}
+    <div class="d-flex flex-wrap gap-2">
+        {% if incident.status.isOpen() %}
+            <form
+                method="post"
+                action="{{ path('app_incident_resolve', {id: incident.id}) }}"
+                class="d-inline"
+                data-confirm="L'incident sera clôturé avec la date du jour."
+                data-confirm-title="Marquer comme résolu ?"
+                data-confirm-label="Résoudre"
+                data-confirm-variant="success"
+            >
+                <input type="hidden" name="_token" value="{{ csrf_token('resolve-incident-' ~ incident.id) }}">
+                <button type="submit" class="btn btn-success btn-pilotis"><i class="bi bi-check2-circle"></i> Résolu</button>
+            </form>
+        {% endif %}
+        <a href="{{ path('app_incident_edit', {id: incident.id}) }}" class="btn btn-primary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+        {{ f.form_delete(path('app_incident_delete', {id: incident.id}), 'delete-incident-' ~ incident.id) }}
+    </div>
 {% endblock %}
-
 {% block body %}
 {% set envLabels = {
     'production': 'Production',
@@ -66,7 +83,7 @@
             <div class="card-body">
                 <div class="row g-3 small">
                     <div class="col-md-6">
-                        <span class="text-muted d-block">Intervenant assigné</span>
+                        <span class="text-muted d-block">Intervenants assignés</span>
                         <strong>{{ incident.assigneeLabel }}</strong>
                     </div>
                     <div class="col-md-6">
@@ -199,7 +216,14 @@
                                     <div class="small text-muted">{{ (document.size / 1024)|round(1) }} Ko · {{ document.uploadedBy.fullName }} · {{ document.createdAt|date('d/m/Y') }}</div>
                                 </td>
                                 <td class="text-end">
-                                    <form method="post" action="{{ path('app_incident_document_delete', {id: document.id}) }}" onsubmit="return confirm('Supprimer ce document ?');">
+                                    <form
+                                        method="post"
+                                        action="{{ path('app_incident_document_delete', {id: document.id}) }}"
+                                        data-confirm="Voulez-vous vraiment supprimer ce document ?"
+                                        data-confirm-title="Supprimer le document ?"
+                                        data-confirm-label="Supprimer"
+                                        data-confirm-variant="danger"
+                                    >
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete-incident-document-' ~ document.id) }}">
                                         <button class="btn btn-sm btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i></button>
                                     </form>

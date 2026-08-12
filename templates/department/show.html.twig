@@ -4,7 +4,11 @@
 {% block page_title %}{{ department.name }}{% endblock %}
 
 {% block page_actions %}
-    <a href="{{ path('app_department_edit', {id: department.id}) }}" class="btn btn-outline-secondary btn-pilotis">Modifier</a>
+    {% import '_partials/_form_macros.html.twig' as f %}
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ path('app_department_edit', {id: department.id}) }}" class="btn btn-outline-secondary btn-pilotis"><i class="bi bi-pencil"></i> Modifier</a>
+        {{ f.form_delete(path('app_department_delete', {id: department.id}), 'delete-department-' ~ department.id) }}
+    </div>
 {% endblock %}
 
 {% block body %}

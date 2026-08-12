@@ -47,9 +47,13 @@ class Incident
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Department $department = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Actor $assignedActor = null;
+    /** @var Collection<int, Actor> */
+    #[ORM\ManyToMany(targetEntity: Actor::class)]
+    #[ORM\JoinTable(name: 'incident_actors')]
+    #[ORM\JoinColumn(name: 'incident_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'actor_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OrderBy(['lastName' => 'ASC', 'firstName' => 'ASC'])]
+    private Collection $assignedActors;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -99,6 +103,7 @@ class Incident
         $this->discoveredAt = $now;
         $this->comments = new ArrayCollection();
         $this->documents = new ArrayCollection();
+        $this->assignedActors = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -190,14 +195,45 @@ class Incident
         return $this;
     }
 
-    public function getAssignedActor(): ?Actor
+    /** @return Collection<int, Actor> */
+    public function getAssignedActors(): Collection
     {
-        return $this->assignedActor;
+        return $this->assignedActors;
     }
 
-    public function setAssignedActor(?Actor $assignedActor): static
+    public function addAssignedActor(Actor $actor): static
     {
-        $this->assignedActor = $assignedActor;
+        if (!$this->assignedActors->contains($actor)) {
+            $this->assignedActors->add($actor);
+        }
+
+        return $this;
+    }
+
+    public function removeAssignedActor(Actor $actor): static
+    {
+        $this->assignedActors->removeElement($actor);
+
+        return $this;
+    }
+
+    /**
+     * @param iterable<Actor> $actors
+     */
+    public function syncAssignedActors(iterable $actors): static
+    {
+        $incoming = [];
+        foreach ($actors as $actor) {
+            $incoming[$actor->getId() ?? spl_object_id($actor)] = $actor;
+            $this->addAssignedActor($actor);
+        }
+
+        foreach ($this->assignedActors->toArray() as $actor) {
+            $key = $actor->getId() ?? spl_object_id($actor);
+            if (!isset($incoming[$key])) {
+                $this->removeAssignedActor($actor);
+            }
+        }
 
         return $this;
     }
@@ -336,7 +372,13 @@ class Incident
 
     public function getAssigneeLabel(): string
     {
-        return $this->assignedActor?->getFullName() ?? 'Non assigné';
+        if ($this->assignedActors->isEmpty()) {
+            return 'Non assigné';
+        }
+
+        return implode(', ', $this->assignedActors->map(
+            static fn (Actor $actor): string => $actor->getFullName()
+        )->toArray());
     }
 
     public function getDaysUntilDue(): ?int

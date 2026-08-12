@@ -31,9 +31,17 @@
 </div>
 {% endmacro %}
 
-{% macro form_delete(action_url, token_id, label = 'Supprimer') %}
-<form method="post" action="{{ action_url }}" class="form-delete" onsubmit="return confirm('Confirmer la suppression ?');">
+{% macro form_delete(action_url, token_id, label = 'Supprimer', button_class = 'btn btn-outline-danger btn-pilotis', message = 'Cette action est définitive. Voulez-vous vraiment supprimer cet élément ?') %}
+<form
+    method="post"
+    action="{{ action_url }}"
+    class="d-inline"
+    data-confirm="{{ message }}"
+    data-confirm-title="Supprimer ?"
+    data-confirm-label="Supprimer"
+    data-confirm-variant="danger"
+>
     <input type="hidden" name="_token" value="{{ csrf_token(token_id) }}">
-    <button class="btn btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i> {{ label }}</button>
+    <button type="submit" class="{{ button_class }}"><i class="bi bi-trash"></i> {{ label }}</button>
 </form>
 {% endmacro %}

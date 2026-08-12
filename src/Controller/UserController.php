@@ -9,6 +9,8 @@ use App\DTO\UserDto;
 use App\Form\UserFormType;
 use App\Repository\UserRepository;
 use App\Service\ActivityLogger;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,15 +28,51 @@ final class UserController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ActivityLogger $activityLogger,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_admin_user_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $q = $this->filters->string($request, 'q');
+        $status = $this->filters->string($request, 'status');
+        $activeOnly = match ($status) {
+            'active' => true,
+            'inactive' => false,
+            default => null,
+        };
+
         return $this->render('admin/user/index.html.twig', [
-            'users' => $this->userRepository->findBy([], ['lastName' => 'ASC']),
+            'users' => $this->userRepository->findFiltered($q, $activeOnly),
+            'filters' => ['q' => $q ?? '', 'status' => $status ?? ''],
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_admin_user_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $q = $this->filters->string($request, 'q');
+        $status = $this->filters->string($request, 'status');
+        $activeOnly = match ($status) {
+            'active' => true,
+            'inactive' => false,
+            default => null,
+        };
+
+        $rows = [];
+        foreach ($this->userRepository->findFiltered($q, $activeOnly) as $user) {
+            $rows[] = [
+                $user->getFullName(),
+                $user->getEmail(),
+                implode(', ', $user->getRoles()),
+                $user->isActive() ? 'Actif' : 'Inactif',
+                $user->isVerified() ? 'Oui' : 'Non',
+            ];
+        }
+
+        return $this->csvExporter->export('utilisateurs.csv', ['Nom', 'E-mail', 'Rôles', 'Statut', 'Vérifié'], $rows);
     }
 
     #[Route('/new', name: 'app_admin_user_new', methods: ['GET', 'POST'])]

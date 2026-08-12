@@ -9,7 +9,15 @@
         {{ form_row(form.title) }}{{ form_row(form.description) }}{{ form_row(form.meetingDate) }}
         <button class="btn btn-primary">Enregistrer</button>
     {{ form_end(form) }}
-    <form method="post" action="{{ path('app_decision_delete', {projectId: project.id, id: decision.id}) }}" class="mt-3 d-inline" onsubmit="return confirm('Supprimer cette décision ?');">
+    <form
+        method="post"
+        action="{{ path('app_decision_delete', {projectId: project.id, id: decision.id}) }}"
+        class="mt-3 d-inline"
+        data-confirm="Voulez-vous vraiment supprimer cette décision ?"
+        data-confirm-title="Supprimer la décision ?"
+        data-confirm-label="Supprimer"
+        data-confirm-variant="danger"
+    >
         <input type="hidden" name="_token" value="{{ csrf_token('delete-decision-' ~ decision.id) }}">
         <button class="btn btn-outline-danger">Supprimer</button>
     </form>

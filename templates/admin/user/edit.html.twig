@@ -24,7 +24,15 @@
             </div>
         {{ form_end(form) }}
 
-        <form method="post" action="{{ path('app_admin_user_delete', {id: user.id}) }}" class="mt-4 pt-3 border-top" onsubmit="return confirm('Supprimer cet utilisateur ?');">
+        <form
+            method="post"
+            action="{{ path('app_admin_user_delete', {id: user.id}) }}"
+            class="mt-4 pt-3 border-top"
+            data-confirm="Voulez-vous vraiment supprimer cet utilisateur ?"
+            data-confirm-title="Supprimer l'utilisateur ?"
+            data-confirm-label="Supprimer"
+            data-confirm-variant="danger"
+        >
             <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
             <button class="btn btn-outline-danger btn-pilotis"><i class="bi bi-trash"></i> Supprimer</button>
         </form>

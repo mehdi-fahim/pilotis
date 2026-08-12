@@ -7,18 +7,25 @@ namespace App\Controller;
 use App\Domain\Entity\Incident;
 use App\Domain\Entity\IncidentDocument;
 use App\Domain\Entity\User;
+use App\Domain\Enum\IncidentStatus;
+use App\Domain\Enum\Priority;
 use App\DTO\CommentDto;
 use App\DTO\IncidentDto;
 use App\Form\CommentFormType;
 use App\Form\DocumentFormType;
 use App\Form\IncidentFormType;
+use App\Repository\ActorRepository;
+use App\Repository\DepartmentRepository;
 use App\Repository\IncidentRepository;
 use App\Service\ActivityLogger;
+use App\Service\CsvExporter;
 use App\Service\IncidentDocumentUploader;
 use App\Service\IncidentSlaService;
+use App\Service\ListFilterResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -29,20 +36,114 @@ final class IncidentController extends AbstractController
 {
     public function __construct(
         private readonly IncidentRepository $incidentRepository,
+        private readonly DepartmentRepository $departmentRepository,
+        private readonly ActorRepository $actorRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ActivityLogger $activityLogger,
         private readonly IncidentSlaService $incidentSlaService,
         private readonly IncidentDocumentUploader $incidentDocumentUploader,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_incident_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        [$q, $status, $priority, $department, $overdueOnly] = $this->resolveIncidentFilters($request);
+
         return $this->render('incident/index.html.twig', [
-            'incidents' => $this->incidentRepository->findBy([], ['openedAt' => 'DESC']),
+            'incidents' => $this->incidentRepository->findFiltered($q, $status, $priority, $department, $overdueOnly),
             'openCount' => $this->incidentRepository->countOpen(),
+            'filters' => [
+                'q' => $q ?? '',
+                'status' => $status?->value ?? '',
+                'priority' => $priority?->value ?? '',
+                'department' => $department?->getId(),
+                'overdue' => $overdueOnly,
+            ],
+            'statusOptions' => $this->enumOptions(IncidentStatus::cases()),
+            'priorityOptions' => $this->enumOptions(Priority::cases()),
+            'departments' => $this->departmentRepository->findBy([], ['name' => 'ASC']),
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_incident_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        [$q, $status, $priority, $department, $overdueOnly] = $this->resolveIncidentFilters($request);
+        $incidents = $this->incidentRepository->findFiltered($q, $status, $priority, $department, $overdueOnly);
+
+        $rows = [];
+        foreach ($incidents as $incident) {
+            $rows[] = [
+                $incident->getReference(),
+                $incident->getTitle(),
+                $incident->getDepartment()?->getName(),
+                $incident->getAssigneeLabel(),
+                $incident->getDiscoveredAt()->format('d/m/Y'),
+                $incident->getPriority()->label(),
+                $incident->getStatus()->label(),
+                $incident->getDueDate()?->format('d/m/Y'),
+                $incident->getResolvedAt()?->format('d/m/Y'),
+                $incident->isOverdue() ? 'Oui' : 'Non',
+            ];
+        }
+
+        return $this->csvExporter->export('incidents.csv', [
+            'Référence', 'Titre', 'Service', 'Intervenant', 'Découverte', 'Priorité', 'Statut', 'Échéance', 'Résolu le', 'SLA dépassé',
+        ], $rows);
+    }
+
+    /**
+     * @return array{0: ?string, 1: ?IncidentStatus, 2: ?Priority, 3: ?\App\Domain\Entity\Department, 4: bool}
+     */
+    private function resolveIncidentFilters(Request $request): array
+    {
+        /** @var ?IncidentStatus $status */
+        $status = $this->filters->enum($request, 'status', IncidentStatus::class);
+        /** @var ?Priority $priority */
+        $priority = $this->filters->enum($request, 'priority', Priority::class);
+        $departmentId = $this->filters->intId($request, 'department');
+
+        return [
+            $this->filters->string($request, 'q'),
+            $status,
+            $priority,
+            $departmentId !== null ? $this->departmentRepository->find($departmentId) : null,
+            $this->filters->bool($request, 'overdue'),
+        ];
+    }
+
+    /**
+     * @param list<\BackedEnum&object{label(): string}> $cases
+     * @return list<array{value: string, label: string}>
+     */
+    private function enumOptions(array $cases): array
+    {
+        return array_map(
+            static fn ($case): array => ['value' => $case->value, 'label' => $case->label()],
+            $cases,
+        );
+    }
+
+    #[Route('/actors.json', name: 'app_incident_actors_json', methods: ['GET'])]
+    public function actorsJson(Request $request): JsonResponse
+    {
+        $departmentId = $this->filters->intId($request, 'department');
+        if ($departmentId === null) {
+            return $this->json([]);
+        }
+
+        $actors = $this->actorRepository->findFiltered(null, $departmentId);
+
+        return $this->json(array_map(
+            static fn ($actor): array => [
+                'id' => $actor->getId(),
+                'name' => $actor->getFullName(),
+            ],
+            $actors,
+        ));
     }
 
     #[Route('/new', name: 'app_incident_new', methods: ['GET', 'POST'])]
@@ -172,6 +273,32 @@ final class IncidentController extends AbstractController
         return $this->redirectToRoute('app_incident_show', ['id' => $incidentId]);
     }
 
+    #[Route('/{id}/resolve', name: 'app_incident_resolve', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function resolve(Incident $incident, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('resolve-incident-' . $incident->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$incident->getStatus()->isOpen()) {
+            $this->addFlash('warning', 'Cet incident est déjà clôturé.');
+
+            return $this->redirectToRoute('app_incident_show', ['id' => $incident->getId()]);
+        }
+
+        $incident->setStatus(IncidentStatus::RESOLVED);
+        $incident->setResolvedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+        $this->activityLogger->log('incident.resolved', $incident, $this->getUser());
+
+        $this->addFlash('success', sprintf(
+            'Incident marqué comme résolu le %s.',
+            $incident->getResolvedAt()->format('d/m/Y')
+        ));
+
+        return $this->redirectToRoute('app_incident_show', ['id' => $incident->getId()]);
+    }
+
     #[Route('/{id}/delete', name: 'app_incident_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Incident $incident, Request $request): Response
     {
@@ -195,7 +322,7 @@ final class IncidentController extends AbstractController
         $dto->status = $incident->getStatus();
         $dto->priority = $incident->getPriority();
         $dto->department = $incident->getDepartment();
-        $dto->assignedActor = $incident->getAssignedActor();
+        $dto->assignedActors = $incident->getAssignedActors()->toArray();
         $dto->discoveredAt = $incident->getDiscoveredAt();
         $dto->solution = $incident->getSolution();
         $dto->reproductionSteps = $incident->getReproductionSteps();
@@ -216,16 +343,16 @@ final class IncidentController extends AbstractController
             ->setDescription($dto->description)
             ->setPriority($dto->priority)
             ->setDepartment($dto->department)
-            ->setAssignedActor($dto->assignedActor)
+            ->syncAssignedActors($dto->assignedActors)
             ->setDiscoveredAt($discoveredAt)
             ->setReproductionSteps($dto->reproductionSteps)
             ->setImpact($dto->impact)
-            ->setEnvironment($dto->environment);
+            ->setEnvironment($dto->environment)
+            ->setSolution($dto->solution);
 
         if (!$isCreate) {
             $incident
                 ->setStatus($dto->status)
-                ->setSolution($dto->solution)
                 ->setRootCause($dto->rootCause);
         }
 

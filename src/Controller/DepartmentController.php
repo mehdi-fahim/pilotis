@@ -8,6 +8,8 @@ use App\Domain\Entity\Department;
 use App\DTO\DepartmentDto;
 use App\Form\DepartmentFormType;
 use App\Repository\DepartmentRepository;
+use App\Service\CsvExporter;
+use App\Service\ListFilterResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,15 +24,37 @@ final class DepartmentController extends AbstractController
     public function __construct(
         private readonly DepartmentRepository $departmentRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly CsvExporter $csvExporter,
+        private readonly ListFilterResolver $filters,
     ) {
     }
 
     #[Route('', name: 'app_department_index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $q = $this->filters->string($request, 'q');
+
         return $this->render('department/index.html.twig', [
-            'departments' => $this->departmentRepository->findBy([], ['name' => 'ASC']),
+            'departments' => $this->departmentRepository->findFiltered($q),
+            'filters' => ['q' => $q ?? ''],
         ]);
+    }
+
+    #[Route('/export.csv', name: 'app_department_export', methods: ['GET'])]
+    public function export(Request $request): Response
+    {
+        $q = $this->filters->string($request, 'q');
+        $rows = [];
+        foreach ($this->departmentRepository->findFiltered($q) as $department) {
+            $rows[] = [
+                $department->getName(),
+                $department->getCode(),
+                $department->getActors()->count(),
+                $department->getTasks()->count(),
+            ];
+        }
+
+        return $this->csvExporter->export('services.csv', ['Nom', 'Code', 'Acteurs', 'Tâches'], $rows);
     }
 
     #[Route('/new', name: 'app_department_new', methods: ['GET', 'POST'])]

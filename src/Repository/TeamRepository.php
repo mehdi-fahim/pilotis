@@ -30,4 +30,21 @@ class TeamRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<Team>
+     */
+    public function findFiltered(?string $q = null): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->leftJoin('t.owner', 'o')->addSelect('o')
+            ->orderBy('t.name', 'ASC');
+
+        if ($q !== null && $q !== '') {
+            $qb->andWhere('LOWER(t.name) LIKE :q OR LOWER(COALESCE(t.description, \'\')) LIKE :q OR LOWER(o.firstName) LIKE :q OR LOWER(o.lastName) LIKE :q')
+                ->setParameter('q', '%' . mb_strtolower($q) . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

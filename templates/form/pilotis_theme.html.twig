@@ -32,35 +32,83 @@
     {{ parent() }}
 {% endblock %}
 
+{% block actor_pills_dynamic_widget %}
+    {% set selectedActors = [] %}
+    {% for child in form %}
+        {% if child.vars.checked %}
+            {% set selectedActors = selectedActors|merge([{
+                id: child.vars.value,
+                name: child.vars.label
+            }]) %}
+        {% endif %}
+    {% endfor %}
+    <div class="actor-pills-wrap">
+        <input type="hidden" data-actor-filter-target="initial" value="{{ selectedActors|json_encode|e('html_attr') }}">
+        <div class="actor-pills-picked" data-actor-filter-target="picked" {% if selectedActors is empty %}hidden{% endif %}></div>
+        <div data-actor-filter-target="inputs" hidden></div>
+
+        <div class="actor-browse-row mb-2">
+            <label class="form-label form-label-modern" for="actor-browse-department">Ajouter depuis un service</label>
+            <select
+                id="actor-browse-department"
+                class="form-select form-select-modern"
+                data-actor-filter-target="department"
+                data-action="change->actor-filter#filter"
+            >
+                <option value="">Sélectionner un service…</option>
+                {% for department in browse_departments|default([]) %}
+                    <option value="{{ department.id }}">{{ department.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="actor-pills-placeholder" data-actor-filter-target="placeholder"{% if selectedActors is not empty %} hidden{% endif %}>
+            <i class="bi bi-people"></i>
+            <span>Choisissez un service ci-dessus pour afficher ses intervenants.</span>
+        </div>
+        <div class="actor-pills-empty" data-actor-filter-target="empty" hidden>
+            <i class="bi bi-person-x"></i>
+            <span>Aucun intervenant rattaché à ce service.</span>
+        </div>
+        <div class="pill-select-grid actor-pills-live" data-actor-filter-target="grid" hidden></div>
+    </div>
+{% endblock %}
+
 {# Input pastille sans le libellé Bootstrap (évite le double texte) #}
-{% macro pill_radio(child, extra_attrs = {}) %}
+{% macro pill_input(child, extra_attrs = {}, input_type = 'radio') %}
     <input
-        type="radio"
+        type="{{ input_type }}"
         class="pill-input"
         id="{{ child.vars.id }}"
         name="{{ child.vars.full_name }}"
         value="{{ child.vars.value }}"
         {% if child.vars.checked %}checked="checked"{% endif %}
         {% if child.vars.disabled %}disabled="disabled"{% endif %}
-        {% if child.vars.required %}required="required"{% endif %}
+        {% if child.vars.required and input_type == 'radio' %}required="required"{% endif %}
         {% for attrname, attrvalue in extra_attrs %}
             {{ attrname }}="{{ attrvalue }}"
         {% endfor %}
     />
 {% endmacro %}
 
+{% macro pill_radio(child, extra_attrs = {}) %}
+    {% import _self as pills %}
+    {{ pills.pill_input(child, extra_attrs, 'radio') }}
+{% endmacro %}
+
 {% block pill_entity_widget %}
     {% import _self as pills %}
     {% set variant = form.vars.pill_variant|default('default') %}
+    {% set inputType = form.vars.multiple ? 'checkbox' : 'radio' %}
     <div class="pill-select pill-select-{{ variant }}" data-controller="pill-select" data-pill-select-variant-value="{{ variant }}">
         <div class="pill-select-grid">
             {%- for child in form %}
                 {% set entity = form_choice_data(form.vars.choices, child.vars.value) %}
                 {% set choiceLabel = form_choice_label(form.vars.choices, child.vars.value, child.vars.label) %}
                 {% set isEmpty = child.vars.value is empty %}
-                {% if isEmpty %}
+                {% if isEmpty and not form.vars.multiple %}
                     <label class="pill-option pill-option-empty" for="{{ child.vars.id }}">
-                        {{ pills.pill_radio(child) }}
+                        {{ pills.pill_input(child, {}, inputType) }}
                         <span class="pill-content">
                             <span class="pill-icon"><i class="bi bi-dash-circle"></i></span>
                             <span class="pill-label">{{ choiceLabel }}</span>
@@ -69,7 +117,7 @@
                 {% elseif variant == 'department' and entity %}
                     {% set color = entity_color(entity.id, entity.name) %}
                     <label class="pill-option" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};">
-                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option'}) }}
+                        {{ pills.pill_input(child, {'data-pill-select-target': 'option'}, inputType) }}
                         <span class="pill-content">
                             <span class="pill-dot"></span>
                             <span class="pill-label">{{ entity.name }}</span>
@@ -80,7 +128,7 @@
                     {% set color = entity_color(entity.id, entity.fullName) %}
                     {% set deptId = entity.department ? entity.department.id : '' %}
                     <label class="pill-option pill-option-actor" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};" data-department-id="{{ deptId }}">
-                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option', 'data-department-id': deptId}) }}
+                        {{ pills.pill_input(child, {'data-pill-select-target': 'option', 'data-department-id': deptId}, inputType) }}
                         <span class="pill-content">
                             <span class="pill-avatar">{{ entity_initials(entity.fullName) }}</span>
                             <span class="pill-text-block">
@@ -93,7 +141,7 @@
                 {% elseif entity %}
                     {% set color = entity_color(entity.id, choiceLabel) %}
                     <label class="pill-option" for="{{ child.vars.id }}" style="--pill-bg: {{ color.bg }}; --pill-text: {{ color.text }}; --pill-border: {{ color.border }}; --pill-dot: {{ color.dot }};">
-                        {{ pills.pill_radio(child, {'data-pill-select-target': 'option'}) }}
+                        {{ pills.pill_input(child, {'data-pill-select-target': 'option'}, inputType) }}
                         <span class="pill-content">
                             <span class="pill-dot"></span>
                             <span class="pill-label">{{ choiceLabel }}</span>

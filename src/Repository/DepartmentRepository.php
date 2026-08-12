@@ -17,4 +17,20 @@ class DepartmentRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Department::class);
     }
+
+    /**
+     * @return list<Department>
+     */
+    public function findFiltered(?string $q = null): array
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->orderBy('d.name', 'ASC');
+
+        if ($q !== null && $q !== '') {
+            $qb->andWhere('LOWER(d.name) LIKE :q OR LOWER(COALESCE(d.code, \'\')) LIKE :q OR LOWER(COALESCE(d.description, \'\')) LIKE :q')
+                ->setParameter('q', '%' . mb_strtolower($q) . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
