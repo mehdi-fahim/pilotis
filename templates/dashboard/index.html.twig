@@ -1,375 +1,178 @@
 {% extends 'base.html.twig' %}
-{% import '_partials/_macros.html.twig' as ui %}
 
 {% block title %}Dashboard - Pilotis{% endblock %}
-{% block page_title %}Tableau de bord{% endblock %}
-{% block breadcrumb %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Vue d'ensemble{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('app_project_new') }}" class="btn btn-accent btn-pilotis"><i class="bi bi-plus-lg"></i> Nouveau projet</a>
+    <a href="{{ path('app_calendar') }}" class="btn btn-soft btn-pilotis"><i class="bi bi-calendar3"></i> Calendrier</a>
+{% endblock %}
 
 {% block body %}
-<div class="dashboard-hub mb-4">
-    <div class="row g-3">
-        <div class="col-md-6">
-            <a href="{{ path('app_incident_index') }}" class="hub-card incidents text-decoration-none">
-                <div class="hub-icon"><i class="bi bi-exclamation-triangle"></i></div>
+{% set byStatus = stats.projects.chartData.projectsByStatus %}
+{% set ended = byStatus.completed|default(0) %}
+{% set running = byStatus.active|default(0) %}
+{% set pending = (byStatus.draft|default(0)) + (byStatus.on_hold|default(0)) %}
+{% set series = stats.projects.sparklines.activity %}
+{% set labels = stats.projects.sparklines.labels %}
+{% set peak = max(series) %}
+{% set arc = (stats.projects.averageProgress * 2.576)|round %}
+{% set tones = ['#1f8a4c', '#7c3aed', '#e11d48', '#ea580c', '#2563eb', '#0f766e'] %}
+{% set overdueTask = stats.projects.overdueTasks|first %}
+{% set overdueIncident = stats.incidents.overdueIncidents|first %}
+{% set reminderCount = stats.projects.overdueTasks|length + stats.incidents.overdueIncidents|length %}
+
+<p class="femly-lead">Bonjour{% if app.user %} {{ app.user.firstName }}{% endif %}. Les projets, les échéances et l'équipe, au même endroit.</p>
+
+<div class="dash" data-controller="dashboard">
+    <section class="dash-kpis" aria-label="Indicateurs">
+        <a class="dash-card dash-kpi is-hero" href="{{ path('app_project_index') }}">
+            <span class="dash-kpi-label">Projets</span>
+            <strong data-count="{{ stats.projects.projectCount }}">{{ stats.projects.projectCount }}</strong>
+            <span class="dash-kpi-meta">{{ stats.projects.averageProgress }} % d'avancement moyen</span>
+            <i class="bi bi-arrow-up-right dash-kpi-go"></i>
+        </a>
+        <a class="dash-card dash-kpi" href="{{ path('app_project_index', {status: 'completed'}) }}">
+            <span class="dash-kpi-label">Terminés</span>
+            <strong data-count="{{ ended }}">{{ ended }}</strong>
+            <span class="dash-kpi-meta">Projets clos</span>
+            <i class="bi bi-arrow-up-right dash-kpi-go"></i>
+        </a>
+        <a class="dash-card dash-kpi" href="{{ path('app_project_index', {status: 'active'}) }}">
+            <span class="dash-kpi-label">En cours</span>
+            <strong data-count="{{ running }}">{{ running }}</strong>
+            <span class="dash-kpi-meta">{{ stats.projects.openTasks }} tâche{{ stats.projects.openTasks > 1 ? 's' : '' }} ouverte{{ stats.projects.openTasks > 1 ? 's' : '' }}</span>
+            <i class="bi bi-arrow-up-right dash-kpi-go"></i>
+        </a>
+        <a class="dash-card dash-kpi" href="{{ path('app_project_index') }}">
+            <span class="dash-kpi-label">En attente</span>
+            <strong data-count="{{ pending }}">{{ pending }}</strong>
+            <span class="dash-kpi-meta">{{ stats.projects.attentionCount }} à suivre</span>
+            <i class="bi bi-arrow-up-right dash-kpi-go"></i>
+        </a>
+    </section>
+
+    <section class="dash-mid">
+        <article class="dash-card">
+            <header class="dash-head">
                 <div>
-                    <div class="hub-title">Suivi des incidents</div>
-                    <div class="hub-desc">Déclarer, assigner et résoudre les incidents opérationnels</div>
-                    <div class="hub-stat">{{ stats.incidents.openCount }} ouvert(s) · {{ stats.incidents.criticalCount }} critique(s)</div>
+                    <h2>Activité</h2>
+                    <p>Projets et tâches, 7 derniers jours.</p>
                 </div>
-            </a>
-        </div>
-        <div class="col-md-6">
-            <a href="{{ path('app_project_index') }}" class="hub-card projects text-decoration-none">
-                <div class="hub-icon"><i class="bi bi-folder2-open"></i></div>
+            </header>
+            <div class="dash-bars" aria-hidden="true">
+                {% for value in series %}
+                    {% set ratio = peak > 0 ? value / peak : 0 %}
+                    {% set height = max(14, (ratio * 100)|round) %}
+                    <span class="{{ value < peak ? 'is-stripe' : '' }}" style="--h: {{ height }}%"></span>
+                {% endfor %}
+            </div>
+            <div class="dash-bar-labels">
+                {% for label in labels %}
+                    <span>{{ label }}</span>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="dash-card dash-remind">
+            <header class="dash-head">
                 <div>
-                    <div class="hub-title">Gestion de projet</div>
-                    <div class="hub-desc">Planifier, suivre l'avancement et piloter vos projets</div>
-                    <div class="hub-stat">{{ stats.projects.projectCount }} projet(s) · {{ stats.projects.averageProgress }}% avancement moyen</div>
+                    <h2>À suivre</h2>
+                    <p>{{ reminderCount > 0 ? reminderCount ~ ' élément' ~ (reminderCount > 1 ? 's' : '') ~ ' en retard' : 'Rien en retard' }}</p>
                 </div>
-            </a>
-        </div>
-    </div>
-</div>
+            </header>
+            {% if overdueTask %}
+                <h3>{{ overdueTask.title }}</h3>
+                <p>Échéance dépassée · {{ overdueTask.dueDate ? overdueTask.dueDate|date('d/m/Y') : 'sans date' }}</p>
+                <a class="btn btn-accent btn-pilotis" href="{{ path('app_task_show', {id: overdueTask.id}) }}">Voir la tâche</a>
+            {% elseif overdueIncident %}
+                <h3>{{ overdueIncident.title }}</h3>
+                <p>{{ overdueIncident.reference }} · ouvert le {{ overdueIncident.openedAt|date('d/m/Y') }}</p>
+                <a class="btn btn-accent btn-pilotis" href="{{ path('app_incident_show', {id: overdueIncident.id}) }}">Voir l'incident</a>
+            {% else %}
+                <h3>Journée calme</h3>
+                <p>Aucun projet ni incident en retard.</p>
+                <a class="btn btn-accent btn-pilotis" href="{{ path('app_calendar') }}">Ouvrir le calendrier</a>
+            {% endif %}
+        </article>
 
-<div data-controller="dashboard"
-     data-dashboard-project-status-data-value="{{ stats.projects.chartData.projectsByStatus|json_encode }}"
-     data-dashboard-incident-status-data-value="{{ stats.incidents.chartData.byStatus|json_encode }}"
-     data-dashboard-incident-priority-data-value="{{ stats.incidents.chartData.byPriority|json_encode }}"
-     data-dashboard-spark-projects-value="{{ stats.projects.sparklines.projects|json_encode }}"
-     data-dashboard-spark-tasks-value="{{ stats.projects.sparklines.tasks|json_encode }}"
-     data-dashboard-spark-incidents-opened-value="{{ stats.incidents.sparklines.opened|json_encode }}"
-     data-dashboard-spark-incidents-resolved-value="{{ stats.incidents.sparklines.resolved|json_encode }}">
+        <article class="dash-card">
+            <header class="dash-head">
+                <div>
+                    <h2>Projets</h2>
+                </div>
+                <a href="{{ path('app_project_new') }}" class="dash-new"><i class="bi bi-plus-lg"></i> Nouveau</a>
+            </header>
+            <div class="dash-project-list">
+                {% for project in stats.projects.projects|slice(0, 6) %}
+                    {% set due = project.forecastEndDate ?? project.endDate %}
+                    <a href="{{ path('app_project_show', {id: project.id}) }}">
+                        <i class="is-{{ project.healthStatus.value }}"></i>
+                        <span>
+                            <strong>{{ project.name }}</strong>
+                            <small>{{ due ? 'Échéance · ' ~ due|date('d/m/Y') : project.status.label() }}</small>
+                        </span>
+                    </a>
+                {% else %}
+                    <p class="dash-empty">Aucun projet pour le moment.</p>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
 
-    <div class="dashboard-tabs-toolbar">
-        <ul class="nav nav-tabs dashboard-tabs mb-0" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active" id="tab-btn-projects" data-bs-toggle="tab" data-bs-target="#tab-projects" type="button" data-dashboard-tab="projects">
-                    <i class="bi bi-folder2-open me-1"></i> Projets
-                </button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" id="tab-btn-incidents" data-bs-toggle="tab" data-bs-target="#tab-incidents" type="button" data-dashboard-tab="incidents">
-                    <i class="bi bi-exclamation-triangle me-1"></i> Incidents
-                </button>
-            </li>
-        </ul>
-        <button
-            type="button"
-            class="btn btn-outline-secondary btn-pilotis dashboard-default-view-btn"
-            data-action="dashboard#setDefaultView"
-            data-dashboard-target="defaultViewButton"
-        >
-            <i class="bi bi-pin-angle me-1"></i> Définir comme vue par défaut
-        </button>
-    </div>
+    <section class="dash-bottom">
+        <article class="dash-card">
+            <header class="dash-head">
+                <div>
+                    <h2>Équipe</h2>
+                    <p>Comptes actifs.</p>
+                </div>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_admin_user_new') }}" class="dash-new"><i class="bi bi-plus-lg"></i> Membre</a>
+                {% endif %}
+            </header>
+            <div class="dash-team">
+                {% for user in stats.team %}
+                    {% set roles = user.roles|join(' ') %}
+                    {% set role = 'ROLE_ADMIN' in roles ? 'Admin' : ('ROLE_PROJECT_MANAGER' in roles ? 'Pilotage' : 'Membre') %}
+                    <div class="dash-member">
+                        <span class="dash-initials" style="background: {{ tones[loop.index0 % 6] }}">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</span>
+                        <span class="dash-member-name">
+                            <strong>{{ user.fullName }}</strong>
+                            <small>{{ user.email }}</small>
+                        </span>
+                        <span class="femly-tag {{ loop.index is odd ? '' : 'is-quiet' }}">{{ role }}</span>
+                    </div>
+                {% else %}
+                    <p class="dash-empty">Aucun utilisateur actif.</p>
+                {% endfor %}
+            </div>
+        </article>
 
-    <div class="tab-content">
-        {# --- ONGLET PROJETS --- #}
-        <div class="tab-pane fade show active" id="tab-projects">
-            <div class="dashboard-section-label mb-2">Indicateurs clés</div>
-            <div class="row g-3 mb-4 dashboard-kpi-row">
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Projets actifs</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.projects.projectCount }}</div>
-                                <span class="kpi-badge neutral"><i class="bi bi-folder2-open"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar blue" style="width:{{ stats.projects.projectCount > 0 ? 100 : 0 }}%"></div>
-                    </div>
+        <article class="dash-card dash-gauge">
+            <header class="dash-head">
+                <div>
+                    <h2>Avancement</h2>
+                    <p>Moyenne de tous les projets.</p>
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Projets en retard</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.projects.overdueProjects|length }}</div>
-                                <span class="kpi-badge {{ stats.projects.overdueProjects|length > 0 ? 'down' : 'up' }}"><i class="bi bi-alarm"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar red" style="width:{{ stats.projects.overdueProjects|length > 0 ? min(stats.projects.overdueProjects|length * 25, 100) : 5 }}%"></div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Tâches ouvertes</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.projects.openTasks }}</div>
-                                <span class="kpi-badge neutral"><i class="bi bi-list-task"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar purple" style="width:{{ stats.projects.openTasks > 0 ? min(stats.projects.openTasks * 10, 100) : 5 }}%"></div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Avancement moyen</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.projects.averageProgress }}<small class="fs-6 text-muted">%</small></div>
-                                <span class="kpi-badge up"><i class="bi bi-graph-up"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar teal" style="width:{{ stats.projects.averageProgress }}%"></div>
-                    </div>
+            </header>
+            <div class="dash-meter">
+                <svg viewBox="0 0 200 118" aria-hidden="true">
+                    <path d="M18 104 A82 82 0 0 1 182 104" fill="none" stroke="var(--bg-muted)" stroke-width="16" stroke-linecap="round"></path>
+                    <path d="M18 104 A82 82 0 0 1 182 104" fill="none" stroke="var(--accent-primary)" stroke-width="16" stroke-linecap="round" stroke-dasharray="{{ arc }} 258"></path>
+                </svg>
+                <div class="dash-meter-label">
+                    <strong>{{ stats.projects.averageProgress }}%</strong>
+                    <span>Avancement moyen</span>
                 </div>
             </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-lg-8">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-graph-up me-2"></i>Activité projets (7 jours)</div>
-                        <div class="card-body">
-                            <div class="chart-wrap chart-wrap-lg"><canvas data-dashboard-target="projectActivityChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="spark-card">
-                        <div class="spark-label">Projets</div>
-                        <div class="spark-row"><div class="spark-value">{{ stats.projects.projectCount }}</div></div>
-                        <canvas data-dashboard-target="sparkProjects" class="spark-canvas"></canvas>
-                    </div>
-                    <div class="spark-card mb-0">
-                        <div class="spark-label">Tâches terminées</div>
-                        <div class="spark-row"><div class="spark-value">{{ stats.projects.completedTasks }}</div></div>
-                        <canvas data-dashboard-target="sparkTasks" class="spark-canvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3">
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Statuts projets</div>
-                        <div class="card-body">
-                            {% if stats.projects.statusBreakdown %}
-                                <div class="stat-breakdown mb-3">
-                                    {% for item in stats.projects.statusBreakdown %}
-                                        <div class="stat-breakdown-row">
-                                            <div class="d-flex justify-content-between small mb-1">
-                                                <span>{{ item.label }}</span>
-                                                <strong>{{ item.count }} ({{ item.percent }}%)</strong>
-                                            </div>
-                                            <div class="stat-breakdown-bar"><span style="width:{{ item.percent }}%"></span></div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="text-muted small mb-3">Aucun projet enregistré.</p>
-                            {% endif %}
-                            <div class="chart-wrap"><canvas data-dashboard-target="projectStatusChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-alarm me-2"></i>Projets en retard</div>
-                        <div class="card-body p-0">
-                            {% if stats.projects.overdueProjects %}
-                                <table class="table-pilotis w-100">
-                                    <tbody>
-                                    {% for project in stats.projects.overdueProjects|slice(0, 4) %}
-                                        <tr>
-                                            <td>
-                                                <a href="{{ path('app_project_show', {id: project.id}) }}">{{ project.name }}</a>
-                                                <div class="small text-muted">{{ project.endDate|date('d/m/Y') }}</div>
-                                            </td>
-                                            <td class="text-end">{{ ui.health_badge(project.healthStatus) }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% else %}
-                                <div class="p-4 text-center text-muted"><i class="bi bi-check-circle" style="color:var(--accent-teal)"></i><p class="mb-0 mt-2 small">Tout est à jour</p></div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header">
-                            <span><i class="bi bi-list-task me-2"></i>Tâches en retard</span>
-                        </div>
-                        <div class="card-body p-0">
-                            {% if stats.projects.overdueTasks %}
-                                <table class="table-pilotis w-100">
-                                    <tbody>
-                                    {% for task in stats.projects.overdueTasks|slice(0, 4) %}
-                                        <tr>
-                                            <td>
-                                                <a href="{{ path('app_task_show', {id: task.id}) }}">{{ task.title }}</a>
-                                                <div class="small text-muted">{{ task.dueDate|date('d/m/Y') }}</div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% else %}
-                                <div class="p-4 text-center text-muted small">Aucune tâche en retard.</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {# --- ONGLET INCIDENTS --- #}
-        <div class="tab-pane fade" id="tab-incidents">
-            <div class="dashboard-section-label mb-2">Indicateurs clés</div>
-            <div class="row g-3 mb-4 dashboard-kpi-row">
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Incidents ouverts</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.incidents.openCount }}</div>
-                                <span class="kpi-badge {{ stats.incidents.openCount > 0 ? 'down' : 'up' }}"><i class="bi bi-exclamation-circle"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar red" style="width:{{ stats.incidents.openCount > 0 ? min(stats.incidents.openCount * 15, 100) : 5 }}%"></div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Critiques</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.incidents.criticalCount }}</div>
-                                <span class="kpi-badge down"><i class="bi bi-lightning"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar red" style="width:{{ stats.incidents.criticalCount > 0 ? 100 : 5 }}%"></div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">SLA dépassés</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.incidents.overdueIncidents|length }}</div>
-                                <span class="kpi-badge down"><i class="bi bi-clock-history"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar red" style="width:{{ stats.incidents.overdueIncidents|length > 0 ? min(stats.incidents.overdueIncidents|length * 20, 100) : 5 }}%"></div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <div class="kpi-card">
-                        <div class="kpi-body">
-                            <div class="kpi-label">Résolus cette semaine</div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="kpi-value">{{ stats.incidents.resolvedThisWeek }}</div>
-                                <span class="kpi-badge up"><i class="bi bi-check2-circle"></i></span>
-                            </div>
-                        </div>
-                        <div class="kpi-bar teal" style="width:{{ stats.incidents.resolvedThisWeek > 0 ? min(stats.incidents.resolvedThisWeek * 20, 100) : 5 }}%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-4">
-                <div class="col-lg-8">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-activity me-2"></i>Incidents ouverts vs résolus (7 jours)</div>
-                        <div class="card-body">
-                            <div class="chart-wrap chart-wrap-lg"><canvas data-dashboard-target="incidentActivityChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="spark-card">
-                        <div class="spark-label">Ouverts (7j)</div>
-                        <div class="spark-row"><div class="spark-value">{{ stats.incidents.openedLast7Days }}</div></div>
-                        <canvas data-dashboard-target="sparkIncidentsOpened" class="spark-canvas"></canvas>
-                    </div>
-                    <div class="spark-card mb-0">
-                        <div class="spark-label">Résolus (7j)</div>
-                        <div class="spark-row"><div class="spark-value">{{ stats.incidents.resolvedLast7Days }}</div></div>
-                        <canvas data-dashboard-target="sparkIncidentsResolved" class="spark-canvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3">
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Par statut</div>
-                        <div class="card-body">
-                            {% if stats.incidents.statusBreakdown %}
-                                <div class="stat-breakdown mb-3">
-                                    {% for item in stats.incidents.statusBreakdown %}
-                                        <div class="stat-breakdown-row">
-                                            <div class="d-flex justify-content-between small mb-1">
-                                                <span>{{ item.label }}</span>
-                                                <strong>{{ item.count }} ({{ item.percent }}%)</strong>
-                                            </div>
-                                            <div class="stat-breakdown-bar"><span style="width:{{ item.percent }}%"></span></div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="text-muted small mb-3">Aucun incident enregistré.</p>
-                            {% endif %}
-                            <div class="chart-wrap"><canvas data-dashboard-target="incidentStatusChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Par priorité</div>
-                        <div class="card-body">
-                            {% if stats.incidents.priorityBreakdown %}
-                                <div class="stat-breakdown mb-3">
-                                    {% for item in stats.incidents.priorityBreakdown %}
-                                        <div class="stat-breakdown-row">
-                                            <div class="d-flex justify-content-between small mb-1">
-                                                <span>{{ item.label }}</span>
-                                                <strong>{{ item.count }} ({{ item.percent }}%)</strong>
-                                            </div>
-                                            <div class="stat-breakdown-bar priority-{{ item.key }}"><span style="width:{{ item.percent }}%"></span></div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="text-muted small mb-3">Aucun incident enregistré.</p>
-                            {% endif %}
-                            <div class="chart-wrap"><canvas data-dashboard-target="incidentPriorityChart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="card-pilotis h-100">
-                        <div class="card-header">
-                            <span><i class="bi bi-exclamation-triangle me-2"></i>Derniers incidents</span>
-                            <a href="{{ path('app_incident_index') }}" class="btn btn-sm btn-outline-secondary btn-pilotis">Voir tout</a>
-                        </div>
-                        <div class="card-body p-0">
-                            {% if stats.incidents.recentIncidents %}
-                                <table class="table-pilotis w-100">
-                                    <tbody>
-                                    {% for incident in stats.incidents.recentIncidents %}
-                                        <tr>
-                                            <td>
-                                                <a href="{{ path('app_incident_show', {id: incident.id}) }}">{{ incident.title }}</a>
-                                                <div class="small text-muted">{{ incident.reference }} · {{ incident.openedAt|date('d/m/Y') }}</div>
-                                            </td>
-                                            <td class="text-end">{{ ui.incident_status_badge(incident.status) }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            {% else %}
-                                <div class="p-4 text-center text-muted small">Aucun incident.</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+            <ul class="dash-meter-legend">
+                <li><i class="is-done"></i> Terminés <strong>{{ ended }}</strong></li>
+                <li><i class="is-run"></i> En cours <strong>{{ running }}</strong></li>
+                <li><i class="is-wait"></i> En attente <strong>{{ pending }}</strong></li>
+            </ul>
+        </article>
+    </section>
 </div>
 {% endblock %}

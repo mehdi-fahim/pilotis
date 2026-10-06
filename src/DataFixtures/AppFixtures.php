@@ -78,7 +78,7 @@ final class AppFixtures extends Fixture
             $task->setTitle($title)
                 ->setProject($project)
                 ->setDepartment($department)
-                ->setAssignedActor($actor)
+                ->syncAssignedActors($actor !== null ? [$actor] : [])
                 ->setStatus($status)
                 ->setPriority(Priority::MEDIUM)
                 ->setEstimateMinutes(960)

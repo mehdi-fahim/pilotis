@@ -36,6 +36,7 @@ class TaskRepository extends ServiceEntityRepository
     public function findByProjectGroupedByStatus(Project $project): array
     {
         return $this->createQueryBuilder('t')
+            ->leftJoin('t.assignedActors', 'a')->addSelect('a')
             ->andWhere('t.project = :project')
             ->setParameter('project', $project)
             ->orderBy('t.status', 'ASC')
@@ -95,7 +96,8 @@ class TaskRepository extends ServiceEntityRepository
         }
 
         if ($actor !== null) {
-            $qb->andWhere('t.assignedActor = :actor')
+            $qb->innerJoin('t.assignedActors', 'actorFilter')
+                ->andWhere('actorFilter = :actor')
                 ->setParameter('actor', $actor);
         }
 

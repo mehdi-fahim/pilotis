@@ -28,7 +28,7 @@
                     <td>{{ team.owner.fullName }}</td>
                     <td><span class="badge badge-pilotis bg-secondary">{{ team.members|length }}</span></td>
                     <td class="text-end">
-                        <a href="{{ path('app_team_show', {id: team.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a>
+                        <a href="{{ path('app_team_show', {id: team.id}) }}" class="btn btn-sm btn-accent">Voir</a>
                         <a href="{{ path('app_team_members', {id: team.id}) }}" class="btn btn-sm btn-outline-secondary btn-pilotis">Membres</a>
                     </td>
                 </tr>

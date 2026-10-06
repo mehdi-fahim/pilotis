@@ -20,9 +20,14 @@
             {{ f.form_section('Description', 'card-text', infos) }}
 
             {% set assign %}
-                <div class="row g-3">
+                <div
+                    class="row g-3"
+                    data-controller="actor-filter"
+                    data-actor-filter-url-value="{{ path('app_incident_actors_json') }}"
+                    data-actor-filter-field-name-value="{{ form.assignedActors.vars.full_name }}[]"
+                >
                     <div class="col-md-6">{{ form_row(form.department) }}</div>
-                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                    <div class="col-12">{{ form_row(form.assignedActors) }}</div>
                 </div>
             {% endset %}
             {{ f.form_section('Rattachements', 'people', assign) }}

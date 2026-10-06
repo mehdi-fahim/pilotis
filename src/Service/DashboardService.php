@@ -14,6 +14,7 @@ use App\Repository\ActivityLogRepository;
 use App\Repository\IncidentRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TaskRepository;
+use App\Repository\UserRepository;
 
 final class DashboardService
 {
@@ -22,6 +23,7 @@ final class DashboardService
         private readonly TaskRepository $taskRepository,
         private readonly IncidentRepository $incidentRepository,
         private readonly ActivityLogRepository $activityLogRepository,
+        private readonly UserRepository $userRepository,
     ) {
     }
 
@@ -30,6 +32,7 @@ final class DashboardService
         return [
             'projects' => $this->getProjectStats(),
             'incidents' => $this->getIncidentStats(),
+            'team' => $this->userRepository->findBy(['isActive' => true], ['firstName' => 'ASC'], 4),
         ];
     }
 
@@ -37,6 +40,8 @@ final class DashboardService
     private function getProjectStats(): array
     {
         $projects = $this->projectRepository->findAll();
+        usort($projects, static fn (Project $a, Project $b): int => strcasecmp($a->getName(), $b->getName()));
+
         $averageProgress = 0.0;
         if ($projects !== []) {
             $averageProgress = round(
@@ -45,25 +50,30 @@ final class DashboardService
             );
         }
 
+        $healthChart = $this->buildProjectsByHealthChart();
+        $statusChart = $this->buildProjectsByStatusChart();
         $totalTasks = count($this->taskRepository->findAll());
 
         return [
-            'projectCount' => $this->projectRepository->countAll(),
+            'projects' => $projects,
+            'projectCount' => count($projects),
+            'attentionCount' => ($healthChart[HealthStatus::ORANGE->value] ?? 0) + ($healthChart[HealthStatus::RED->value] ?? 0),
             'overdueProjects' => $this->projectRepository->findOverdue(),
             'openTasks' => $this->taskRepository->countOpen(),
             'completedTasks' => $totalTasks - $this->taskRepository->countOpen(),
             'averageProgress' => $averageProgress,
             'chartData' => [
-                'projectsByStatus' => $this->buildProjectsByStatusChart(),
-                'projectsByHealth' => $this->buildProjectsByHealthChart(),
+                'projectsByStatus' => $statusChart,
+                'projectsByHealth' => $healthChart,
             ],
             'overdueTasks' => $this->taskRepository->findOverdue(),
             'sparklines' => $this->buildProjectSparklines(),
             'statusBreakdown' => $this->buildBreakdown(
-                $this->buildProjectsByStatusChart(),
+                $statusChart,
                 ProjectStatus::cases(),
                 static fn (ProjectStatus $status): string => $status->label(),
             ),
+            'healthBreakdown' => $this->buildHealthLegend($healthChart),
         ];
     }
 
@@ -101,12 +111,14 @@ final class DashboardService
         ];
     }
 
-    /** @return array{projects: list<int>, tasks: list<int>, activity: list<int>} */
+    /** @return array{projects: list<int>, tasks: list<int>, activity: list<int>, labels: list<string>} */
     private function buildProjectSparklines(): array
     {
         $projects = [];
         $tasks = [];
         $activity = [];
+        $labels = [];
+        $letters = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
         for ($i = 6; $i >= 0; --$i) {
             $day = new \DateTimeImmutable("-{$i} days");
@@ -117,10 +129,11 @@ final class DashboardService
 
             $projects[] = $projectCount;
             $tasks[] = $taskCount;
-            $activity[] = max(1, $projectCount + $taskCount);
+            $activity[] = $projectCount + $taskCount;
+            $labels[] = $letters[(int) $day->format('N') - 1];
         }
 
-        return ['projects' => $projects, 'tasks' => $tasks, 'activity' => $activity];
+        return ['projects' => $projects, 'tasks' => $tasks, 'activity' => $activity, 'labels' => $labels];
     }
 
     /** @return array{opened: list<int>, resolved: list<int>} */
@@ -202,6 +215,29 @@ final class DashboardService
         }
 
         return $data;
+    }
+
+    /**
+     * @param array<string, int> $chartData
+     *
+     * @return list<array{key: string, label: string, count: int, percent: int}>
+     */
+    private function buildHealthLegend(array $chartData): array
+    {
+        $total = array_sum($chartData);
+        $items = [];
+
+        foreach (HealthStatus::cases() as $healthStatus) {
+            $count = $chartData[$healthStatus->value] ?? 0;
+            $items[] = [
+                'key' => $healthStatus->value,
+                'label' => $healthStatus->label(),
+                'count' => $count,
+                'percent' => $total > 0 ? (int) round($count / $total * 100) : 0,
+            ];
+        }
+
+        return $items;
     }
 
     /**

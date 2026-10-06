@@ -98,8 +98,8 @@ final class DocumentController extends AbstractController
         }
 
         $projectId = $document->getProject()->getId();
-        $this->documentUploader->remove($document);
         $this->activityLogger->log('document.deleted', $document, $this->getUser());
+        $this->documentUploader->remove($document);
 
         $this->addFlash('success', 'Document supprimé.');
 

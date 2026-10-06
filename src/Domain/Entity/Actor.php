@@ -49,7 +49,7 @@ class Actor
     private ?string $notes = null;
 
     /** @var Collection<int, Task> */
-    #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'assignedActor')]
+    #[ORM\ManyToMany(targetEntity: Task::class, mappedBy: 'assignedActors')]
     private Collection $tasks;
 
     public function __construct()

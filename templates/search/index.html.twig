@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recherche - Pilotis{% endblock %}
+{% block page_title %}Recherche{% endblock %}
+{% block breadcrumb %}Projets et incidents{% endblock %}
+
+{% block body %}
+<p class="femly-lead">
+    {% if q %}
+        Résultats pour « {{ q }} ».
+    {% else %}
+        Saisissez un nom de projet ou d'incident.
+    {% endif %}
+</p>
+
+<section class="dash-card" style="margin-bottom: 1rem;">
+    <header class="dash-head">
+        <div>
+            <h2>Projets</h2>
+            <p>{{ projects|length }} résultat{{ projects|length > 1 ? 's' : '' }}</p>
+        </div>
+    </header>
+    {% for project in projects %}
+        <a class="cal-side-row" href="{{ path('app_project_show', {id: project.id}) }}">
+            <span class="femly-avatar">{{ project.name|first|upper }}</span>
+            <span>
+                <strong>{{ project.name }}</strong>
+                <small>{{ project.status.label() }}</small>
+            </span>
+        </a>
+    {% else %}
+        <p class="dash-empty">{% if q %}Aucun projet ne correspond.{% else %}La recherche s'affiche ici.{% endif %}</p>
+    {% endfor %}
+</section>
+
+<section class="dash-card">
+    <header class="dash-head">
+        <div>
+            <h2>Incidents</h2>
+            <p>{{ incidents|length }} résultat{{ incidents|length > 1 ? 's' : '' }}</p>
+        </div>
+    </header>
+    {% for incident in incidents %}
+        <a class="cal-side-row" href="{{ path('app_incident_show', {id: incident.id}) }}">
+            <span class="femly-avatar is-alert"><i class="bi bi-exclamation-lg"></i></span>
+            <span>
+                <strong>{{ incident.title }}</strong>
+                <small>{{ incident.reference }} · {{ incident.status.label() }}</small>
+            </span>
+        </a>
+    {% else %}
+        <p class="dash-empty">{% if q %}Aucun incident ne correspond.{% else %}La recherche s'affiche ici.{% endif %}</p>
+    {% endfor %}
+</section>
+{% endblock %}

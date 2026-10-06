@@ -18,7 +18,7 @@
                 <div class="row g-3 small">
                     <div class="col-sm-6"><strong>Projet</strong><br><a href="{{ path('app_project_show', {id: task.project.id}) }}">{{ task.project.name }}</a></div>
                     <div class="col-sm-6"><strong>Service</strong><br>{{ task.department ? task.department.name : '—' }}</div>
-                    <div class="col-sm-6"><strong>Acteur assigné</strong><br>{{ task.assigneeLabel }}</div>
+                    <div class="col-sm-6"><strong>Acteurs assignés</strong><br>{{ task.assigneeLabel }}</div>
                     <div class="col-sm-6"><strong>Estimation</strong><br>{{ (task.estimateMinutes / 60)|round(1) }} h</div>
                     <div class="col-sm-6"><strong>Temps passé</strong><br>{{ (task.timeSpentMinutes / 60)|round(1) }} h</div>
                     <div class="col-sm-6"><strong>Début</strong><br>{{ task.startDate ? task.startDate|date('d/m/Y') : '—' }}</div>

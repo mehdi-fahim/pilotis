@@ -74,7 +74,7 @@ final class TaskController extends AbstractController
         if (is_numeric($actorId) && (int) $actorId > 0) {
             $actor = $this->actorRepository->find((int) $actorId);
             if ($actor !== null) {
-                $dto->assignedActor = $actor;
+                $dto->assignedActors = [$actor];
             }
         }
 
@@ -86,7 +86,7 @@ final class TaskController extends AbstractController
                 $dto->project ?? throw $this->createNotFoundException('Projet requis.'),
                 (string) $dto->title,
                 $dto->description,
-                $dto->assignedActor,
+                $dto->assignedActors,
                 $dto->department,
                 $dto->status,
                 $dto->priority,
@@ -135,7 +135,7 @@ final class TaskController extends AbstractController
             $this->taskService->update($task, [
                 'title' => $dto->title,
                 'description' => $dto->description,
-                'assignedActor' => $dto->assignedActor,
+                'assignedActors' => $dto->assignedActors,
                 'department' => $dto->department,
                 'status' => $dto->status,
                 'priority' => $dto->priority,
@@ -165,9 +165,9 @@ final class TaskController extends AbstractController
         }
 
         $projectId = $task->getProject()->getId();
+        $this->activityLogger->log('task.deleted', $task, $this->getUser());
         $this->entityManager->remove($task);
         $this->entityManager->flush();
-        $this->activityLogger->log('task.deleted', $task, $this->getUser());
 
         $this->addFlash('success', 'Tâche supprimée.');
 
@@ -180,7 +180,7 @@ final class TaskController extends AbstractController
         $dto->title = $task->getTitle();
         $dto->description = $task->getDescription();
         $dto->project = $task->getProject();
-        $dto->assignedActor = $task->getAssignedActor();
+        $dto->assignedActors = $task->getAssignedActors()->toArray();
         $dto->department = $task->getDepartment();
         $dto->status = $task->getStatus();
         $dto->priority = $task->getPriority();

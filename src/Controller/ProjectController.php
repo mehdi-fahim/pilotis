@@ -9,6 +9,7 @@ use App\Domain\Enum\Priority;
 use App\Domain\Enum\ProjectStatus;
 use App\DTO\ProjectDto;
 use App\Form\ProjectFormType;
+use App\Repository\ProjectMeetingRepository;
 use App\Repository\ProjectRepository;
 use App\Service\ActivityLogger;
 use App\Service\AiSummaryService;
@@ -32,6 +33,7 @@ final class ProjectController extends AbstractController
         private readonly AiSummaryService $aiSummaryService,
         private readonly CsvExporter $csvExporter,
         private readonly ListFilterResolver $filters,
+        private readonly ProjectMeetingRepository $projectMeetingRepository,
     ) {
     }
 
@@ -140,10 +142,41 @@ final class ProjectController extends AbstractController
     #[Route('/{id}', name: 'app_project_show', methods: ['GET'])]
     public function show(Project $project, Request $request): Response
     {
+        $activeTab = (string) $request->query->get('tab', 'overview');
+        $meetings = [];
+        $activeMeeting = null;
+
+        if ($activeTab === 'meetings') {
+            $meetings = $this->projectMeetingRepository->findByProject($project);
+            $noteId = $request->query->getInt('note');
+
+            foreach ($meetings as $meeting) {
+                if ($meeting->getId() === $noteId) {
+                    $activeMeeting = $meeting;
+                    break;
+                }
+            }
+
+            if ($activeMeeting === null && $meetings !== []) {
+                $activeMeeting = $meetings[0];
+            }
+
+            if ($activeMeeting !== null && $noteId !== $activeMeeting->getId()) {
+                return $this->redirectToRoute('app_project_show', [
+                    'id' => $project->getId(),
+                    'tab' => 'meetings',
+                    'note' => $activeMeeting->getId(),
+                ]);
+            }
+        }
+
         return $this->render('project/show.html.twig', [
             'project' => $project,
-            'activeTab' => $request->query->get('tab', 'overview'),
-            'aiSummary' => $this->aiSummaryService->generateWeeklySummary($project),
+            'activeTab' => $activeTab,
+            'weekly' => $this->aiSummaryService->weeklyFacts($project),
+            'meetingCount' => $this->projectMeetingRepository->countForProject($project),
+            'meetings' => $meetings,
+            'activeMeeting' => $activeMeeting,
         ]);
     }
 
@@ -182,9 +215,9 @@ final class ProjectController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
+        $this->activityLogger->log('project.deleted', $project, $this->getUser());
         $this->entityManager->remove($project);
         $this->entityManager->flush();
-        $this->activityLogger->log('project.deleted', $project, $this->getUser());
 
         $this->addFlash('success', 'Projet supprimé.');
 

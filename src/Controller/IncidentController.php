@@ -162,10 +162,10 @@ final class IncidentController extends AbstractController
             $this->entityManager->flush();
             $this->activityLogger->log('incident.created', $incident, $this->getUser());
 
-            $this->addFlash('success', sprintf(
-                'Incident créé. Échéance SLA : %s.',
-                $incident->getDueDate()?->format('d/m/Y') ?? '—'
-            ));
+            $this->addFlash('success', $incident->getDueDate()
+                ? sprintf('Incident créé. Échéance SLA : %s.', $incident->getDueDate()->format('d/m/Y'))
+                : 'Incident créé sans échéance SLA.'
+            );
 
             return $this->redirectToRoute('app_incident_show', ['id' => $incident->getId()]);
         }
@@ -265,8 +265,8 @@ final class IncidentController extends AbstractController
         }
 
         $incidentId = $document->getIncident()->getId();
-        $this->incidentDocumentUploader->remove($document);
         $this->activityLogger->log('incident.document.deleted', $document, $this->getUser());
+        $this->incidentDocumentUploader->remove($document);
 
         $this->addFlash('success', 'Document supprimé.');
 
@@ -330,6 +330,7 @@ final class IncidentController extends AbstractController
         $dto->environment = $incident->getEnvironment();
         $dto->rootCause = $incident->getRootCause();
         $dto->dueDate = $incident->getDueDate();
+        $dto->noSla = $incident->getDueDate() === null;
 
         return $dto;
     }
@@ -356,9 +357,11 @@ final class IncidentController extends AbstractController
                 ->setRootCause($dto->rootCause);
         }
 
-        if ($dto->dueDate !== null) {
+        if ($dto->noSla) {
+            $incident->setDueDate(null);
+        } elseif ($dto->dueDate !== null) {
             $incident->setDueDate($dto->dueDate);
-        } elseif ($isCreate || $incident->getDueDate() === null) {
+        } else {
             $incident->setDueDate($this->incidentSlaService->computeDueDate($dto->priority, $discoveredAt));
         }
 

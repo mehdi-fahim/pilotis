@@ -16,6 +16,7 @@ use App\Repository\ActorRepository;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -99,6 +100,11 @@ final class IncidentFormType extends AbstractType
                 ],
                 'help' => 'Peut être renseignée dès la création, puis complétée au fil du traitement.',
             ])
+            ->add('noSla', CheckboxType::class, [
+                'label' => 'Pas d’échéance SLA',
+                'required' => false,
+                'help' => 'Cochez pour ne pas calculer ni imposer de date limite de traitement.',
+            ])
         ;
 
         $this->addAssignedActorsField($builder, []);
@@ -140,7 +146,7 @@ final class IncidentFormType extends AbstractType
                     'widget' => 'single_text',
                     'input' => 'datetime_immutable',
                     'required' => false,
-                    'help' => 'Laisser vide pour recalculer selon priorité et date de découverte.',
+                    'help' => 'Ignorée si « Pas d’échéance SLA » est coché. Sinon, laisser vide pour recalculer selon priorité et date de découverte.',
                 ])
             ;
         }

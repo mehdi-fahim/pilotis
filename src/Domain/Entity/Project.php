@@ -91,6 +91,11 @@ class Project
     #[ORM\OneToMany(targetEntity: MilestoneReport::class, mappedBy: 'project', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $milestoneReports;
 
+    /** @var Collection<int, ProjectMeeting> */
+    #[ORM\OneToMany(targetEntity: ProjectMeeting::class, mappedBy: 'project', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['heldAt' => 'DESC', 'id' => 'DESC'])]
+    private Collection $meetings;
+
     public function __construct()
     {
         $this->startDate = new \DateTimeImmutable();
@@ -99,6 +104,7 @@ class Project
         $this->risks = new ArrayCollection();
         $this->decisions = new ArrayCollection();
         $this->milestoneReports = new ArrayCollection();
+        $this->meetings = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -300,6 +306,12 @@ class Project
     public function getMilestoneReports(): Collection
     {
         return $this->milestoneReports;
+    }
+
+    /** @return Collection<int, ProjectMeeting> */
+    public function getMeetings(): Collection
+    {
+        return $this->meetings;
     }
 
     public function isOverdue(): bool

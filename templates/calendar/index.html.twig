@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendrier - Pilotis{% endblock %}
+{% block page_title %}Calendrier{% endblock %}
+{% block breadcrumb %}Projets et incidents{% endblock %}
+
+{% block body %}
+<div class="cal">
+    <div class="cal-toolbar">
+        <div>
+            <h2>{{ monthLabel|capitalize }}</h2>
+            <p>{{ monthProjects|length }} projet{{ monthProjects|length > 1 ? 's' : '' }} · {{ monthIncidents|length }} incident{{ monthIncidents|length > 1 ? 's' : '' }}</p>
+        </div>
+        <div class="cal-nav">
+            <a href="{{ path('app_calendar', {month: previousMonth}) }}" aria-label="Mois précédent"><i class="bi bi-chevron-left"></i></a>
+            <a href="{{ path('app_calendar', {month: todayMonth}) }}">Aujourd'hui</a>
+            <a href="{{ path('app_calendar', {month: nextMonth}) }}" aria-label="Mois suivant"><i class="bi bi-chevron-right"></i></a>
+        </div>
+    </div>
+
+    <div class="cal-layout">
+        <section class="cal-board" aria-label="Mois">
+            <div class="cal-weekdays">
+                <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+            </div>
+            <div class="cal-grid">
+                {% for day in days %}
+                    <div class="cal-day{{ day.inMonth ? '' : ' is-out' }}{{ day.isToday ? ' is-today' : '' }}">
+                        <span class="cal-num">{{ day.date|date('j') }}</span>
+                        {% for event in day.events|slice(0, 3) %}
+                            <a class="cal-chip is-{{ event.kind }}" href="{{ event.url }}" title="{{ event.title }}">{{ event.title }}</a>
+                        {% endfor %}
+                        {% if day.events|length > 3 %}
+                            <span class="cal-more">+{{ day.events|length - 3 }}</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="cal-legend">
+                <span><i class="is-project"></i> Début de projet</span>
+                <span><i class="is-end"></i> Fin prévue</span>
+                <span><i class="is-incident"></i> Incident</span>
+                <span><i class="is-due"></i> Échéance</span>
+            </div>
+        </section>
+
+        <aside class="cal-side">
+            <article class="femly-card">
+                <header>
+                    <h3>Projets du mois</h3>
+                    <a href="{{ path('app_project_index') }}">Voir tout</a>
+                </header>
+                {% for project in monthProjects %}
+                    <a class="cal-side-row" href="{{ path('app_project_show', {id: project.id}) }}">
+                        <span class="femly-avatar">{{ project.name|first|upper }}</span>
+                        <span>
+                            <strong>{{ project.name }}</strong>
+                            <small>{{ project.startDate|date('d/m/Y') }} → {{ (project.forecastEndDate ?? project.endDate ?? project.startDate)|date('d/m/Y') }}</small>
+                        </span>
+                    </a>
+                {% else %}
+                    <p class="cal-empty">Aucun projet sur cette période.</p>
+                {% endfor %}
+            </article>
+
+            <article class="femly-card">
+                <header>
+                    <h3>Incidents du mois</h3>
+                    <a href="{{ path('app_incident_index') }}">Voir tout</a>
+                </header>
+                {% for incident in monthIncidents %}
+                    <a class="cal-side-row" href="{{ path('app_incident_show', {id: incident.id}) }}">
+                        <span class="femly-avatar is-alert"><i class="bi bi-exclamation-lg"></i></span>
+                        <span>
+                            <strong>{{ incident.title }}</strong>
+                            <small>{{ incident.reference }} · {{ incident.openedAt|date('d/m/Y') }}</small>
+                        </span>
+                    </a>
+                {% else %}
+                    <p class="cal-empty">Aucun incident sur cette période.</p>
+                {% endfor %}
+            </article>
+        </aside>
+    </div>
+</div>
+{% endblock %}

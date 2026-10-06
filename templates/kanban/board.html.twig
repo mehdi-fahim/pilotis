@@ -33,8 +33,15 @@
                         <div class="kanban-card-body">
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                 <span class="fw-semibold small kanban-card-title">{{ task.title }}</span>
-                                {% if task.assignedActor %}
-                                    <span class="kanban-avatar" title="{{ task.assignedActor.fullName }}">{{ task.assignedActor.firstName|first|upper }}{{ task.assignedActor.lastName|first|upper }}</span>
+                                {% if task.assignedActors is not empty %}
+                                    <span class="kanban-avatars">
+                                        {% for actor in task.assignedActors|slice(0, 3) %}
+                                            <span class="kanban-avatar" title="{{ actor.fullName }}">{{ actor.firstName|first|upper }}{{ actor.lastName|first|upper }}</span>
+                                        {% endfor %}
+                                        {% if task.assignedActors|length > 3 %}
+                                            <span class="kanban-avatar" title="{{ task.assigneeLabel }}">+{{ task.assignedActors|length - 3 }}</span>
+                                        {% endif %}
+                                    </span>
                                 {% endif %}
                             </div>
                             <div class="d-flex justify-content-between align-items-center">

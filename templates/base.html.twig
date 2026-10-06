@@ -1,16 +1,31 @@
 <!DOCTYPE html>
-<html lang="fr" data-bs-theme="dark" data-theme="dark">
+<html lang="fr" data-bs-theme="light" data-theme="light" data-accent="green">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
         (function () {
             var KEY = 'pilotis-theme';
+            var ACCENT_KEY = 'pilotis-accent';
+            var ACCENTS = ['green', 'blue', 'violet', 'orange', 'rose', 'teal'];
             function getTheme() {
                 try {
                     var t = localStorage.getItem(KEY);
-                    return (t === 'light' || t === 'dark') ? t : 'dark';
-                } catch (e) { return 'dark'; }
+                    return (t === 'light' || t === 'dark') ? t : 'light';
+                } catch (e) { return 'light'; }
+            }
+            function getAccent() {
+                try {
+                    var a = localStorage.getItem(ACCENT_KEY);
+                    return ACCENTS.indexOf(a) >= 0 ? a : 'green';
+                } catch (e) { return 'green'; }
+            }
+            function paintDots(name) {
+                document.querySelectorAll('[data-accent-set]').forEach(function (el) {
+                    var on = el.getAttribute('data-accent-set') === name;
+                    el.classList.toggle('is-active', on);
+                    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
             }
             function applyTheme(theme) {
                 document.documentElement.setAttribute('data-bs-theme', theme);
@@ -19,18 +34,37 @@
                     el.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
                 });
             }
+            function applyAccent(name) {
+                document.documentElement.setAttribute('data-accent', name);
+                paintDots(name);
+            }
             applyTheme(getTheme());
-            document.addEventListener('DOMContentLoaded', function () { applyTheme(getTheme()); });
+            applyAccent(getAccent());
+            document.addEventListener('DOMContentLoaded', function () {
+                applyTheme(getTheme());
+                applyAccent(getAccent());
+            });
             window.__pilotisToggleTheme = function () {
                 var next = getTheme() === 'dark' ? 'light' : 'dark';
                 try { localStorage.setItem(KEY, next); } catch (e) {}
                 applyTheme(next);
+            };
+            window.__pilotisSetAccent = function (name) {
+                if (ACCENTS.indexOf(name) < 0) return;
+                try { localStorage.setItem(ACCENT_KEY, name); } catch (e) {}
+                applyAccent(name);
             };
             document.addEventListener('click', function (e) {
                 var btn = e.target.closest('[data-theme-toggle]');
                 if (btn) {
                     e.preventDefault();
                     window.__pilotisToggleTheme();
+                    return;
+                }
+                var dot = e.target.closest('[data-accent-set]');
+                if (dot) {
+                    e.preventDefault();
+                    window.__pilotisSetAccent(dot.getAttribute('data-accent-set'));
                 }
             });
         })();
@@ -56,34 +90,37 @@
 <div id="wrapper" data-controller="sidebar">
     <nav id="sidebar" data-sidebar-target="sidebar">
         <a href="{{ path('app_dashboard') }}" class="sidebar-brand text-decoration-none" title="Pilotis">
-            <img src="{{ asset('images/pilotis-logo.png') }}" alt="Pilotis" class="brand-logo brand-logo-dark">
-            <img src="{{ asset('images/pilotis-logo-light.png') }}" alt="Pilotis" class="brand-logo brand-logo-light">
+            <img src="{{ asset('images/pilotis-logo.png') }}" alt="Pilotis" class="brand-mark brand-mark-dark">
+            <img src="{{ asset('images/pilotis-logo-light.png') }}" alt="" class="brand-mark brand-mark-light">
         </a>
-        <div class="sidebar-search d-none d-lg-block">
+        <form class="sidebar-search d-none d-lg-block" method="get" action="{{ path('app_search') }}">
             <i class="bi bi-search"></i>
-            <input type="search" placeholder="Rechercher…" disabled>
-        </div>
+            <input type="search" name="q" value="{{ app.request.query.get('q') }}" placeholder="Rechercher…" aria-label="Rechercher un projet ou un incident">
+        </form>
         <div class="sidebar-nav">
-            <div class="nav-section-title">Accueil</div>
+            <div class="nav-section-title">Menu</div>
             <ul class="nav flex-column">
                 <li><a href="{{ path('app_dashboard') }}" class="nav-link {{ current_route == 'app_dashboard' ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
-            </ul>
-            <div class="nav-section-title mt-3">Incidents</div>
-            <ul class="nav flex-column">
-                <li><a href="{{ path('app_incident_index') }}" class="nav-link {{ current_route starts with 'app_incident' ? 'active' : '' }}"><i class="bi bi-exclamation-triangle"></i> Suivi des incidents</a></li>
-            </ul>
-            <div class="nav-section-title mt-3">Projets</div>
-            <ul class="nav flex-column">
                 <li><a href="{{ path('app_project_index') }}" class="nav-link {{ current_route starts with 'app_project' or current_route starts with 'app_task' or current_route starts with 'app_kanban' or current_route starts with 'app_timeline' ? 'active' : '' }}"><i class="bi bi-folder2-open"></i> Projets</a></li>
+                <li><a href="{{ path('app_calendar') }}" class="nav-link {{ current_route == 'app_calendar' ? 'active' : '' }}"><i class="bi bi-calendar3"></i> Calendrier</a></li>
+                <li><a href="{{ path('app_incident_index') }}" class="nav-link {{ current_route starts with 'app_incident' ? 'active' : '' }}"><i class="bi bi-exclamation-triangle"></i> Incidents</a></li>
             </ul>
             {% if is_granted('ROLE_ADMIN') %}
-            <div class="nav-section-title mt-3">Administration</div>
+            <div class="nav-section-title mt-3">Général</div>
             <ul class="nav flex-column">
                 <li><a href="{{ path('app_department_index') }}" class="nav-link {{ current_route starts with 'app_department' ? 'active' : '' }}"><i class="bi bi-diagram-3"></i> Services</a></li>
                 <li><a href="{{ path('app_actor_index') }}" class="nav-link {{ current_route starts with 'app_actor' ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Acteurs</a></li>
                 <li><a href="{{ path('app_admin_user_index') }}" class="nav-link {{ current_route starts with 'app_admin_user' ? 'active' : '' }}"><i class="bi bi-people"></i> Utilisateurs</a></li>
             </ul>
             {% endif %}
+        </div>
+        <div class="sidebar-foot">
+            <a class="sidebar-promo" href="{{ path('app_calendar') }}">
+                <span class="sidebar-promo-kicker">Vue d'ensemble</span>
+                <strong>Calendrier</strong>
+                <span>Projets et incidents, sur le même mois.</span>
+                <span class="sidebar-promo-btn">Ouvrir</span>
+            </a>
         </div>
     </nav>
 
@@ -95,12 +132,20 @@
                 <button class="topbar-icon-btn d-lg-none" data-action="click->sidebar#toggle" aria-label="Menu">
                     <i class="bi bi-list"></i>
                 </button>
-                <div class="topbar-search d-none d-md-block">
+                <form class="topbar-search d-none d-md-block" method="get" action="{{ path('app_search') }}">
                     <i class="bi bi-search"></i>
-                    <input type="search" placeholder="Rechercher un projet ou un incident…" disabled>
-                </div>
+                    <input type="search" name="q" value="{{ app.request.query.get('q') }}" placeholder="Rechercher un projet ou un incident…" aria-label="Rechercher un projet ou un incident">
+                </form>
             </div>
             <div class="topbar-actions">
+                <div class="accent-switch" role="group" aria-label="Changer la couleur">
+                    <button type="button" class="accent-dot is-green is-active" data-accent-set="green" aria-label="Vert" aria-pressed="true"></button>
+                    <button type="button" class="accent-dot is-blue" data-accent-set="blue" aria-label="Bleu" aria-pressed="false"></button>
+                    <button type="button" class="accent-dot is-violet" data-accent-set="violet" aria-label="Violet" aria-pressed="false"></button>
+                    <button type="button" class="accent-dot is-orange" data-accent-set="orange" aria-label="Orange" aria-pressed="false"></button>
+                    <button type="button" class="accent-dot is-rose" data-accent-set="rose" aria-label="Rose" aria-pressed="false"></button>
+                    <button type="button" class="accent-dot is-teal" data-accent-set="teal" aria-label="Sarcelle" aria-pressed="false"></button>
+                </div>
                 <button type="button" class="topbar-icon-btn" data-theme-toggle aria-label="Changer de thème" title="Changer de thème">
                     <i class="bi bi-sun" data-theme-icon></i>
                 </button>
@@ -132,9 +177,12 @@
                     </div>
                     <div class="dropdown">
                         <div class="topbar-user" data-bs-toggle="dropdown" aria-expanded="false" role="button">
-                            <div class="mini-avatar">{{ app.user.firstName|first|upper }}</div>
-                            <span class="d-none d-md-inline">{{ app.user.firstName }}</span>
-                            <i class="bi bi-chevron-down ms-1" style="font-size:0.65rem;"></i>
+                            <div class="mini-avatar">{{ app.user.firstName|first|upper }}{{ app.user.lastName|first|upper }}</div>
+                            <span class="topbar-user-meta d-none d-md-flex">
+                                <strong>{{ app.user.fullName }}</strong>
+                                <small>{{ app.user.email }}</small>
+                            </span>
+                            <i class="bi bi-chevron-down" style="font-size:0.65rem;"></i>
                         </div>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li class="dropdown-header">{{ app.user.fullName }}</li>

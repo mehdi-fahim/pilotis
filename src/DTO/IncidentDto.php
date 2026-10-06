@@ -27,4 +27,5 @@ final class IncidentDto
     public ?string $environment = null;
     public ?string $rootCause = null;
     public ?\DateTimeImmutable $dueDate = null;
+    public bool $noSla = false;
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-bs-theme="dark" data-theme="dark">
+<html lang="fr" data-bs-theme="light" data-theme="light" data-accent="green">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,8 +9,8 @@
             function getTheme() {
                 try {
                     var t = localStorage.getItem(KEY);
-                    return (t === 'light' || t === 'dark') ? t : 'dark';
-                } catch (e) { return 'dark'; }
+                    return (t === 'light' || t === 'dark') ? t : 'light';
+                } catch (e) { return 'light'; }
             }
             function applyTheme(theme) {
                 document.documentElement.setAttribute('data-bs-theme', theme);
@@ -19,8 +19,18 @@
                     el.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
                 });
             }
+            var ACCENTS = ['green', 'blue', 'violet', 'orange', 'rose', 'teal'];
+            function applyAccent() {
+                var name = 'green';
+                try {
+                    var stored = localStorage.getItem('pilotis-accent');
+                    if (ACCENTS.indexOf(stored) >= 0) name = stored;
+                } catch (e) {}
+                document.documentElement.setAttribute('data-accent', name);
+            }
             applyTheme(getTheme());
-            document.addEventListener('DOMContentLoaded', function () { applyTheme(getTheme()); });
+            applyAccent();
+            document.addEventListener('DOMContentLoaded', function () { applyTheme(getTheme()); applyAccent(); });
             window.__pilotisToggleTheme = function () {
                 var next = getTheme() === 'dark' ? 'light' : 'dark';
                 try { localStorage.setItem(KEY, next); } catch (e) {}
@@ -56,7 +66,7 @@
     </button>
     <div class="auth-panel-left">
         <img src="{{ asset('images/pilotis-logo.png') }}" alt="Pilotis" class="auth-brand-logo auth-brand-logo-dark">
-        <img src="{{ asset('images/pilotis-logo-light.png') }}" alt="Pilotis" class="auth-brand-logo auth-brand-logo-light">
+        <img src="{{ asset('images/pilotis-logo-light.png') }}" alt="" class="auth-brand-logo auth-brand-logo-light">
         <p>Gérez vos projets internes. Services, acteurs, Kanban, Gantt — tout en un seul endroit.</p>
         <div class="mt-5 d-flex gap-4 opacity-50">
             <div class="text-center"><i class="bi bi-kanban fs-3"></i><div class="small mt-1">Kanban</div></div>

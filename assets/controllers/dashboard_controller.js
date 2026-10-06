@@ -1,57 +1,29 @@
 import { Controller } from '@hotwired/stimulus';
 import { Chart, registerables } from 'chart.js';
+import { animate, stagger } from 'motion';
 
 Chart.register(...registerables);
 
-const LIGHT = {
-    grid: 'rgba(15, 23, 42, 0.08)',
-    text: '#94a3b8',
-    teal: '#10b981',
-    purple: '#8b5cf6',
-    blue: '#4f8ff7',
-    red: '#ef4444',
+const HEALTH_COLORS = {
+    green: '#22c55e',
     orange: '#f59e0b',
+    red: '#ef4444',
 };
-
-Chart.defaults.color = LIGHT.text;
-Chart.defaults.borderColor = LIGHT.grid;
 
 export default class extends Controller {
     static values = {
-        projectStatusData: Object,
-        incidentStatusData: Object,
-        incidentPriorityData: Object,
+        healthData: Object,
         sparkProjects: Array,
         sparkTasks: Array,
-        sparkIncidentsOpened: Array,
-        sparkIncidentsResolved: Array,
     };
 
-    static targets = [
-        'projectStatusChart',
-        'projectActivityChart',
-        'incidentStatusChart',
-        'incidentPriorityChart',
-        'incidentActivityChart',
-        'sparkProjects',
-        'sparkTasks',
-        'sparkIncidentsOpened',
-        'sparkIncidentsResolved',
-        'defaultViewButton',
-    ];
+    static targets = ['healthChart', 'activityChart'];
 
     connect() {
         this.charts = [];
-        this.incidentChartsRendered = false;
-        this.storageKey = 'pilotis-default-view';
-        this.activeView = 'projects';
-
-        requestAnimationFrame(() => {
-            this.applyDefaultView();
-            this.renderProjectCharts();
-            this.bindTabEvents();
-            this.updateDefaultViewButton();
-        });
+        this.playEntrance();
+        this.countUp();
+        requestAnimationFrame(() => this.renderCharts());
     }
 
     disconnect() {
@@ -59,250 +31,128 @@ export default class extends Controller {
         this.charts = [];
     }
 
-    bindTabEvents() {
-        document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
-            tab.addEventListener('shown.bs.tab', (event) => {
-                const view = event.target.getAttribute('data-dashboard-tab') || 'projects';
-                this.activeView = view;
-                if (view === 'incidents') {
-                    this.renderIncidentChartsOnce();
-                }
-                this.charts.forEach((chart) => chart.resize());
-                this.updateDefaultViewButton();
+    playEntrance() {
+        const cards = this.element.querySelectorAll('.dash-card');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduce || cards.length === 0) {
+            cards.forEach((card) => {
+                card.style.opacity = '1';
             });
-        });
-    }
-
-    applyDefaultView() {
-        let preferred = 'projects';
-        try {
-            const stored = localStorage.getItem(this.storageKey);
-            if (stored === 'projects' || stored === 'incidents') {
-                preferred = stored;
-            }
-        } catch (e) {
-            preferred = 'projects';
-        }
-
-        this.activeView = preferred;
-        if (preferred === 'incidents') {
-            const button = document.getElementById('tab-btn-incidents');
-            if (button && window.bootstrap?.Tab) {
-                window.bootstrap.Tab.getOrCreateInstance(button).show();
-                this.renderIncidentChartsOnce();
-            }
-        }
-    }
-
-    setDefaultView() {
-        try {
-            localStorage.setItem(this.storageKey, this.activeView);
-        } catch (e) {
-            // ignore storage errors
-        }
-        this.updateDefaultViewButton(true);
-    }
-
-    updateDefaultViewButton(justSaved = false) {
-        if (!this.hasDefaultViewButtonTarget) {
-            return;
-        }
-
-        let preferred = 'projects';
-        try {
-            const stored = localStorage.getItem(this.storageKey);
-            if (stored === 'projects' || stored === 'incidents') {
-                preferred = stored;
-            }
-        } catch (e) {
-            preferred = 'projects';
-        }
-
-        const isCurrentDefault = preferred === this.activeView;
-        const label = this.activeView === 'incidents' ? 'Incidents' : 'Projets';
-
-        if (justSaved || isCurrentDefault) {
-            this.defaultViewButtonTarget.innerHTML = `<i class="bi bi-pin-fill me-1"></i> Vue par défaut : ${label}`;
-            this.defaultViewButtonTarget.classList.remove('btn-outline-secondary');
-            this.defaultViewButtonTarget.classList.add('btn-outline-primary');
-        } else {
-            this.defaultViewButtonTarget.innerHTML = '<i class="bi bi-pin-angle me-1"></i> Définir comme vue par défaut';
-            this.defaultViewButtonTarget.classList.add('btn-outline-secondary');
-            this.defaultViewButtonTarget.classList.remove('btn-outline-primary');
-        }
-    }
-    trackChart(chart) {
-        this.charts.push(chart);
-
-        return chart;
-    }
-
-    renderProjectCharts() {
-        if (this.hasProjectActivityChartTarget) {
-            this.trackChart(this.renderDualBarChart(
-                this.projectActivityChartTarget,
-                this.sparkProjectsValue,
-                this.sparkTasksValue,
-                'Projets',
-                'Tâches',
-                LIGHT.blue,
-                LIGHT.purple,
-            ));
-        }
-        if (this.hasProjectStatusChartTarget) {
-            this.trackChart(this.renderDoughnut(this.projectStatusChartTarget, this.projectStatusDataValue, {
-                draft: 'Brouillon', active: 'Actif', on_hold: 'Pause', completed: 'Terminé', cancelled: 'Annulé',
-            }, [LIGHT.text, LIGHT.blue, LIGHT.orange, LIGHT.teal, LIGHT.red]));
-        }
-        if (this.hasSparkProjectsTarget) {
-            this.trackChart(this.renderSpark(this.sparkProjectsTarget, this.sparkProjectsValue, LIGHT.blue));
-        }
-        if (this.hasSparkTasksTarget) {
-            this.trackChart(this.renderSpark(this.sparkTasksTarget, this.sparkTasksValue, LIGHT.purple));
-        }
-    }
-
-    renderIncidentChartsOnce() {
-        if (this.incidentChartsRendered) {
-            this.charts.forEach((chart) => chart.resize());
 
             return;
         }
-        this.incidentChartsRendered = true;
 
-        if (this.hasIncidentActivityChartTarget) {
-            this.trackChart(this.renderDualBarChart(
-                this.incidentActivityChartTarget,
-                this.sparkIncidentsOpenedValue,
-                this.sparkIncidentsResolvedValue,
-                'Ouverts',
-                'Résolus',
-                LIGHT.red,
-                LIGHT.teal,
-            ));
-        }
-        if (this.hasIncidentStatusChartTarget) {
-            this.trackChart(this.renderDoughnut(this.incidentStatusChartTarget, this.incidentStatusDataValue, {
-                open: 'Ouvert', in_progress: 'En cours', waiting: 'En attente', resolved: 'Résolu', closed: 'Clôturé',
-            }, [LIGHT.red, LIGHT.blue, LIGHT.orange, LIGHT.teal, LIGHT.text]));
-        }
-        if (this.hasIncidentPriorityChartTarget) {
-            this.trackChart(this.renderBarChart(this.incidentPriorityChartTarget, this.incidentPriorityDataValue, {
-                low: 'Basse', medium: 'Moyenne', high: 'Haute', critical: 'Critique',
-            }, [LIGHT.text, LIGHT.blue, LIGHT.orange, LIGHT.red]));
-        }
-        if (this.hasSparkIncidentsOpenedTarget) {
-            this.trackChart(this.renderSpark(this.sparkIncidentsOpenedTarget, this.sparkIncidentsOpenedValue, LIGHT.red));
-        }
-        if (this.hasSparkIncidentsResolvedTarget) {
-            this.trackChart(this.renderSpark(this.sparkIncidentsResolvedTarget, this.sparkIncidentsResolvedValue, LIGHT.teal));
+        try {
+            animate([...cards], { opacity: [0, 1] }, {
+                duration: 0.55,
+                delay: stagger(0.06),
+                ease: [0.22, 1, 0.36, 1],
+            });
+        } catch (error) {
+            cards.forEach((card) => {
+                card.style.opacity = '1';
+            });
         }
     }
 
-    renderDualBarChart(canvas, dataA, dataB, labelA, labelB, colorA, colorB) {
-        const days = ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'J-1', 'Auj.'];
-        const seriesA = Array.isArray(dataA) && dataA.length ? dataA : [0, 0, 0, 0, 0, 0, 0];
-        const seriesB = Array.isArray(dataB) && dataB.length ? dataB : [0, 0, 0, 0, 0, 0, 0];
+    countUp() {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.element.querySelectorAll('[data-count]').forEach((node) => {
+            const target = Number(node.dataset.count);
+            if (!Number.isFinite(target)) {
+                return;
+            }
+            if (reduce) {
+                node.textContent = String(target);
+                return;
+            }
 
-        return new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: days,
-                datasets: [
-                    { label: labelA, data: seriesA, backgroundColor: colorA, borderRadius: 6, borderSkipped: false },
-                    { label: labelB, data: seriesB, backgroundColor: colorB, borderRadius: 6, borderSkipped: false },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } } },
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true, grid: { color: LIGHT.grid }, ticks: { stepSize: 1 } },
-                },
-            },
+            node.textContent = '0';
+            try {
+                const animation = animate(0, target, {
+                    duration: 0.9,
+                    ease: [0.22, 1, 0.36, 1],
+                    onUpdate: (latest) => {
+                        node.textContent = String(Math.round(latest));
+                    },
+                });
+                animation?.finished?.then(() => {
+                    node.textContent = String(target);
+                });
+            } catch (error) {
+                node.textContent = String(target);
+            }
         });
     }
 
-    renderDualLineChart(canvas, dataA, dataB, labelA, labelB, colorA, colorB) {
-        const days = ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'J-1', 'Auj.'];
-        const seriesA = Array.isArray(dataA) && dataA.length ? dataA : [0, 0, 0, 0, 0, 0, 0];
-        const seriesB = Array.isArray(dataB) && dataB.length ? dataB : [0, 0, 0, 0, 0, 0, 0];
-
-        return new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: days,
-                datasets: [
-                    { label: labelA, data: seriesA, borderColor: colorA, backgroundColor: colorA + '22', fill: true, tension: 0.4, pointRadius: 3 },
-                    { label: labelB, data: seriesB, borderColor: colorB, backgroundColor: colorB + '22', fill: true, tension: 0.4, pointRadius: 3 },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } } },
-                scales: { x: { grid: { color: LIGHT.grid } }, y: { beginAtZero: true, grid: { color: LIGHT.grid }, ticks: { stepSize: 1 } } },
-            },
-        });
+    renderCharts() {
+        if (this.hasHealthChartTarget) {
+            this.charts.push(this.renderHealthRing(this.healthChartTarget, this.healthDataValue));
+        }
+        if (this.hasActivityChartTarget) {
+            this.charts.push(this.renderActivity(this.activityChartTarget, this.sparkProjectsValue, this.sparkTasksValue));
+        }
     }
 
-    renderDoughnut(canvas, data, labels, colors) {
+    renderHealthRing(canvas, data) {
         const chartData = { ...data };
-        let keys = Object.keys(chartData).filter((k) => chartData[k] > 0);
+        let keys = Object.keys(HEALTH_COLORS).filter((key) => (chartData[key] ?? 0) > 0);
         if (keys.length === 0) {
             keys = ['empty'];
             chartData.empty = 1;
         }
 
+        const labels = { green: 'Sain', orange: 'Attention', red: 'Critique', empty: 'Aucun projet' };
+        const colors = keys.map((key) => HEALTH_COLORS[key] ?? '#e2e8f0');
+
         return new Chart(canvas, {
             type: 'doughnut',
             data: {
-                labels: keys.map((k) => labels[k] ?? k),
-                datasets: [{ data: keys.map((k) => chartData[k]), backgroundColor: colors, borderWidth: 0 }],
+                labels: keys.map((key) => labels[key] ?? key),
+                datasets: [{
+                    data: keys.map((key) => chartData[key]),
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    spacing: keys.length > 1 ? 4 : 0,
+                    borderRadius: 10,
+                }],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
-                cutout: '65%',
+                cutout: '78%',
+                plugins: { legend: { display: false }, tooltip: { enabled: keys[0] !== 'empty' } },
             },
         });
     }
 
-    renderBarChart(canvas, data, labels, colors) {
-        const keys = Object.keys(data);
+    renderActivity(canvas, projects, tasks) {
+        const styles = getComputedStyle(document.documentElement);
+        const muted = styles.getPropertyValue('--text-muted').trim() || '#94a3b8';
+        const days = ['J-6', 'J-5', 'J-4', 'J-3', 'J-2', 'J-1', 'Auj.'];
+        const seriesA = Array.isArray(projects) && projects.length ? projects : [0, 0, 0, 0, 0, 0, 0];
+        const seriesB = Array.isArray(tasks) && tasks.length ? tasks : [0, 0, 0, 0, 0, 0, 0];
 
         return new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: keys.map((k) => labels[k] ?? k),
-                datasets: [{ data: keys.map((k) => data[k]), backgroundColor: colors, borderRadius: 6, borderSkipped: false }],
+                labels: days,
+                datasets: [
+                    { label: 'Projets', data: seriesA, backgroundColor: '#4f8ff7', borderRadius: 8, borderSkipped: false, maxBarThickness: 14 },
+                    { label: 'Tâches', data: seriesB, backgroundColor: '#22c55e', borderRadius: 8, borderSkipped: false, maxBarThickness: 14 },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: LIGHT.grid }, ticks: { stepSize: 1 } } },
-            },
-        });
-    }
-
-    renderSpark(canvas, data, color) {
-        const values = Array.isArray(data) && data.length ? data : [0, 0, 0, 0, 0, 0, 0];
-
-        return new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: values.map((_, i) => i),
-                datasets: [{ data: values, borderColor: color, backgroundColor: color + '22', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { x: { display: false }, y: { display: false } },
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, color: muted, padding: 16 } },
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: muted } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, color: muted, precision: 0 }, grid: { color: 'rgba(148, 163, 184, 0.18)' }, border: { display: false } },
+                },
             },
         });
     }

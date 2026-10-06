@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Domain\Entity\Actor;
 use App\Domain\Entity\Task;
 use App\DTO\TaskDto;
 use App\Form\TaskFormType;
@@ -62,7 +63,7 @@ final class TaskApiController extends AbstractController
             $dto->project ?? throw $this->createNotFoundException(),
             (string) $dto->title,
             $dto->description,
-            $dto->assignedActor,
+            $dto->assignedActors,
             $dto->department,
             $dto->status,
             $dto->priority,
@@ -93,7 +94,7 @@ final class TaskApiController extends AbstractController
         $this->taskService->update($task, [
             'title' => $dto->title,
             'description' => $dto->description,
-            'assignedActor' => $dto->assignedActor,
+            'assignedActors' => $dto->assignedActors,
             'department' => $dto->department,
             'status' => $dto->status,
             'priority' => $dto->priority,
@@ -124,7 +125,10 @@ final class TaskApiController extends AbstractController
             'title' => $task->getTitle(),
             'description' => $task->getDescription(),
             'projectId' => $task->getProject()->getId(),
-            'assignedActorId' => $task->getAssignedActor()?->getId(),
+            'assignedActorId' => ($first = $task->getAssignedActors()->first()) instanceof Actor ? $first->getId() : null,
+            'assignedActorIds' => array_values($task->getAssignedActors()->map(
+                static fn (Actor $actor): ?int => $actor->getId()
+            )->toArray()),
             'departmentId' => $task->getDepartment()?->getId(),
             'status' => $task->getStatus()->value,
             'priority' => $task->getPriority()->value,
@@ -142,7 +146,7 @@ final class TaskApiController extends AbstractController
         $dto->title = $task->getTitle();
         $dto->description = $task->getDescription();
         $dto->project = $task->getProject();
-        $dto->assignedActor = $task->getAssignedActor();
+        $dto->assignedActors = $task->getAssignedActors()->toArray();
         $dto->department = $task->getDepartment();
         $dto->status = $task->getStatus();
         $dto->priority = $task->getPriority();

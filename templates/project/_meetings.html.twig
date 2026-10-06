@@ -1,0 +1,170 @@
+{% set textColors = ['#1e293b', '#4f8ff7', '#0f766e', '#15803d', '#b45309', '#dc2626', '#7c3aed', '#be185d'] %}
+{% set markColors = ['#fffdf8', '#fef3c7', '#dbeafe', '#d1fae5', '#ffedd5', '#fee2e2', '#ede9fe', '#fce7f3'] %}
+
+<div
+    class="notebook"
+    data-turbo="false"
+    {% if activeMeeting %}
+        data-controller="meeting-notebook"
+        data-meeting-notebook-save-url-value="{{ path('app_project_meeting_update', {projectId: project.id, meetingId: activeMeeting.id}) }}"
+        data-meeting-notebook-csrf-value="{{ csrf_token('save-meeting-' ~ activeMeeting.id) }}"
+        data-action="keydown->meeting-notebook#onKeydown"
+    {% endif %}
+>
+    <aside class="notebook-pages">
+        <div class="notebook-pages-head">
+            <div>
+                <div class="notebook-kicker">Suivi de projet</div>
+                <div class="notebook-pages-title">Pages</div>
+            </div>
+        </div>
+        <div class="notebook-pages-body">
+            <form method="post" action="{{ path('app_project_meeting_new', {projectId: project.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('new-meeting-' ~ project.id) }}">
+                <button type="submit" class="notebook-new"><i class="bi bi-plus-lg"></i> Nouvelle réunion</button>
+            </form>
+            <div class="notebook-pages-list" {% if activeMeeting %}data-meeting-notebook-target="pageList"{% endif %}>
+                {% for meeting in meetings %}
+                    <a
+                        href="{{ path('app_project_show', {id: project.id, tab: 'meetings', note: meeting.id}) }}"
+                        class="notebook-page {{ activeMeeting and activeMeeting.id == meeting.id ? 'active' : '' }}"
+                        data-held-at="{{ meeting.heldAt|date('Y-m-d') }}"
+                        data-meeting-id="{{ meeting.id }}"
+                        {% if activeMeeting and activeMeeting.id == meeting.id %}
+                            data-meeting-notebook-target="activePage"
+                            aria-current="page"
+                        {% endif %}
+                    >
+                        <span class="notebook-page-title" {% if activeMeeting and activeMeeting.id == meeting.id %}data-meeting-notebook-target="pageTitle"{% endif %}>{{ meeting.title }}</span>
+                        <span class="notebook-page-date" {% if activeMeeting and activeMeeting.id == meeting.id %}data-meeting-notebook-target="pageDate"{% endif %}>{{ meeting.heldAt|date('d/m/Y') }}</span>
+                    </a>
+                {% else %}
+                    <p class="notebook-pages-hint">Aucune page pour l'instant.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+
+    {% if activeMeeting %}
+        <section class="notebook-sheet">
+            <header class="notebook-sheet-head">
+                <input
+                    type="text"
+                    class="notebook-title-input"
+                    value="{{ activeMeeting.title }}"
+                    maxlength="200"
+                    placeholder="Titre de la réunion"
+                    autocomplete="off"
+                    aria-label="Titre de la réunion"
+                    data-meeting-notebook-target="title"
+                    data-action="input->meeting-notebook#scheduleSave"
+                >
+                <div class="notebook-meta">
+                    <label class="notebook-date-label">
+                        <i class="bi bi-calendar-event"></i>
+                        <input
+                            type="date"
+                            class="notebook-date"
+                            value="{{ activeMeeting.heldAt|date('Y-m-d') }}"
+                            aria-label="Date de la réunion"
+                            data-meeting-notebook-target="date"
+                            data-action="change->meeting-notebook#onDate"
+                        >
+                    </label>
+                    {% if activeMeeting.author %}
+                        <span class="notebook-author">par {{ activeMeeting.author.fullName }}</span>
+                    {% endif %}
+                    <span class="notebook-status is-saved" data-meeting-notebook-target="status">Enregistrement automatique</span>
+                    <form
+                        method="post"
+                        action="{{ path('app_project_meeting_delete', {projectId: project.id, meetingId: activeMeeting.id}) }}"
+                        class="notebook-delete-form"
+                        data-confirm="Le compte rendu de cette réunion sera définitivement supprimé."
+                        data-confirm-title="Supprimer cette réunion ?"
+                        data-confirm-label="Supprimer"
+                        data-confirm-variant="danger"
+                    >
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete-meeting-' ~ activeMeeting.id) }}">
+                        <button type="submit" class="notebook-delete" title="Supprimer"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </header>
+
+            <div class="notebook-toolbar" data-action="mousedown->meeting-notebook#keepSelection">
+                <button type="button" class="notebook-tool" title="Annuler" data-action="click->meeting-notebook#format" data-command="undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+                <button type="button" class="notebook-tool" title="Rétablir" data-action="click->meeting-notebook#format" data-command="redo"><i class="bi bi-arrow-clockwise"></i></button>
+                <span class="notebook-tool-sep"></span>
+                <button type="button" class="notebook-tool" title="Gras" data-action="click->meeting-notebook#format" data-command="bold"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="notebook-tool" title="Italique" data-action="click->meeting-notebook#format" data-command="italic"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="notebook-tool" title="Souligné" data-action="click->meeting-notebook#format" data-command="underline"><i class="bi bi-type-underline"></i></button>
+                <button type="button" class="notebook-tool" title="Barré" data-action="click->meeting-notebook#format" data-command="strikeThrough"><i class="bi bi-type-strikethrough"></i></button>
+                <span class="notebook-tool-sep"></span>
+
+                <div class="notebook-pop">
+                    <button type="button" class="notebook-tool" title="Couleur du texte" data-action="click->meeting-notebook#togglePalette" data-palette="fore"><i class="bi bi-palette"></i></button>
+                    <div class="notebook-palette" hidden data-meeting-notebook-target="forePalette">
+                        {% for color in textColors %}
+                            <button type="button" class="notebook-swatch" style="background: {{ color }}" title="Couleur du texte" data-action="click->meeting-notebook#format" data-command="foreColor" data-value="{{ color }}"></button>
+                        {% endfor %}
+                        <label class="notebook-color-input" title="Autre couleur">
+                            <input type="color" value="#4f8ff7" data-kind="fore" data-action="change->meeting-notebook#applyColor">
+                        </label>
+                    </div>
+                </div>
+                <div class="notebook-pop">
+                    <button type="button" class="notebook-tool" title="Surlignage" data-action="click->meeting-notebook#togglePalette" data-palette="back"><i class="bi bi-highlighter"></i></button>
+                    <div class="notebook-palette" hidden data-meeting-notebook-target="backPalette">
+                        {% for color in markColors %}
+                            <button type="button" class="notebook-swatch" style="background: {{ color }}" title="Surlignage" data-action="click->meeting-notebook#format" data-command="hiliteColor" data-value="{{ color }}"></button>
+                        {% endfor %}
+                        <label class="notebook-color-input" title="Autre surlignage">
+                            <input type="color" value="#fef3c7" data-kind="back" data-action="change->meeting-notebook#applyColor">
+                        </label>
+                    </div>
+                </div>
+
+                <select class="notebook-size" aria-label="Taille du texte" data-action="change->meeting-notebook#onSize">
+                    <option value="">Taille</option>
+                    <option value="12px">Petit</option>
+                    <option value="15px">Normal</option>
+                    <option value="20px">Grand</option>
+                    <option value="28px">Très grand</option>
+                </select>
+                <span class="notebook-tool-sep"></span>
+                <button type="button" class="notebook-tool" title="Paragraphe" data-action="click->meeting-notebook#format" data-command="formatBlock" data-value="p"><i class="bi bi-text-paragraph"></i></button>
+                <button type="button" class="notebook-tool" title="Titre" data-action="click->meeting-notebook#format" data-command="formatBlock" data-value="h2"><i class="bi bi-type-h2"></i></button>
+                <button type="button" class="notebook-tool" title="Sous-titre" data-action="click->meeting-notebook#format" data-command="formatBlock" data-value="h3"><i class="bi bi-type-h3"></i></button>
+                <span class="notebook-tool-sep"></span>
+                <button type="button" class="notebook-tool" title="Liste à puces" data-action="click->meeting-notebook#format" data-command="insertUnorderedList"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="notebook-tool" title="Liste numérotée" data-action="click->meeting-notebook#format" data-command="insertOrderedList"><i class="bi bi-list-ol"></i></button>
+                <span class="notebook-tool-sep"></span>
+                <button type="button" class="notebook-tool" title="Aligner à gauche" data-action="click->meeting-notebook#format" data-command="justifyLeft"><i class="bi bi-text-left"></i></button>
+                <button type="button" class="notebook-tool" title="Centrer" data-action="click->meeting-notebook#format" data-command="justifyCenter"><i class="bi bi-text-center"></i></button>
+                <button type="button" class="notebook-tool" title="Aligner à droite" data-action="click->meeting-notebook#format" data-command="justifyRight"><i class="bi bi-text-right"></i></button>
+                <span class="notebook-tool-sep"></span>
+                <button type="button" class="notebook-tool" title="Effacer la mise en forme" data-action="click->meeting-notebook#format" data-command="removeFormat"><i class="bi bi-eraser"></i></button>
+            </div>
+
+            <div
+                class="notebook-editor"
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Compte rendu"
+                spellcheck="true"
+                lang="fr"
+                data-placeholder="Rédigez le compte rendu : participants, échanges, décisions, actions…"
+                data-meeting-notebook-target="editor"
+                data-action="input->meeting-notebook#scheduleSave mouseup->meeting-notebook#rememberSelection keyup->meeting-notebook#rememberSelection paste->meeting-notebook#onPaste drop->meeting-notebook#onDrop"
+            >{{ activeMeeting.content|raw }}</div>
+        </section>
+    {% else %}
+        <section class="notebook-sheet notebook-sheet-empty">
+            <div class="notebook-empty">
+                <i class="bi bi-journal-text"></i>
+                <h2>Aucune réunion</h2>
+                <p>Créez une page pour noter un point ou le compte rendu d'une réunion de ce projet.</p>
+            </div>
+        </section>
+    {% endif %}
+</div>

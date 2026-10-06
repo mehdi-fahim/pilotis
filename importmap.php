@@ -44,4 +44,16 @@ return [
         'version' => '5.3.8',
         'type' => 'css',
     ],
+    'motion' => [
+        'version' => '14.0.0',
+    ],
+    'framer-motion/dom' => [
+        'version' => '14.0.0',
+    ],
+    'motion-dom' => [
+        'version' => '14.0.0',
+    ],
+    'motion-utils' => [
+        'version' => '14.0.0',
+    ],
 ];

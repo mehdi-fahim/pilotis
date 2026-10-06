@@ -5,7 +5,7 @@
 {% block page_title %}Nouvelle tâche{% endblock %}
 
 {% block body %}
-{{ f.form_page_header('Nouvelle tâche', 'Rattachez la tâche à un projet, un service et un acteur existants.', path('app_project_show', {id: project.id, tab: 'tasks'})) }}
+{{ f.form_page_header('Nouvelle tâche', 'Rattachez la tâche à un projet, un service et un ou plusieurs acteurs.', path('app_project_show', {id: project.id, tab: 'tasks'})) }}
 
 <div class="form-card-modern">
     <div class="form-card-inner">
@@ -20,9 +20,14 @@
             {{ f.form_section('Description', 'card-text', infos) }}
 
             {% set assign %}
-                <div class="row g-3">
+                <div
+                    class="row g-3"
+                    data-controller="actor-filter"
+                    data-actor-filter-url-value="{{ path('app_incident_actors_json') }}"
+                    data-actor-filter-field-name-value="{{ form.assignedActors.vars.full_name }}[]"
+                >
                     <div class="col-md-6">{{ form_row(form.department) }}</div>
-                    <div class="col-md-6">{{ form_row(form.assignedActor) }}</div>
+                    <div class="col-12">{{ form_row(form.assignedActors) }}</div>
                 </div>
             {% endset %}
             {{ f.form_section('Rattachements', 'people', assign) }}

@@ -4,6 +4,13 @@
 {% block title %}{{ project.name }} - Pilotis{% endblock %}
 {% block page_title %}{{ project.name }}{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    {% if activeTab == 'meetings' %}
+        <meta name="turbo-cache-control" content="no-cache">
+    {% endif %}
+{% endblock %}
+
 {% block body %}
 <div class="project-hero-dark">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
@@ -35,9 +42,8 @@
 <ul class="nav project-tabs-dark mb-4">
     <li class="nav-item"><a class="nav-link {{ activeTab == 'overview' ? 'active' : '' }}" href="{{ path('app_project_show', {id: project.id, tab: 'overview'}) }}">Vue d'ensemble</a></li>
     <li class="nav-item"><a class="nav-link {{ activeTab == 'tasks' ? 'active' : '' }}" href="{{ path('app_project_show', {id: project.id, tab: 'tasks'}) }}">Tâches ({{ project.tasks|length }})</a></li>
+    <li class="nav-item"><a class="nav-link {{ activeTab == 'meetings' ? 'active' : '' }}" href="{{ path('app_project_show', {id: project.id, tab: 'meetings'}) }}">Réunions ({{ meetingCount }})</a></li>
     <li class="nav-item"><a class="nav-link" href="{{ path('app_risk_index', {projectId: project.id}) }}">Risques ({{ project.risks|length }})</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ path('app_decision_index', {projectId: project.id}) }}">Décisions</a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ path('app_milestone_index', {projectId: project.id}) }}">Jalons</a></li>
     <li class="nav-item"><a class="nav-link" href="{{ path('app_document_project', {projectId: project.id}) }}">Documents</a></li>
 </ul>
 
@@ -50,7 +56,7 @@
         {% if project.tasks|length %}
             <div class="table-responsive">
                 <table class="table table-pilotis">
-                    <thead><tr><th>Titre</th><th>Service</th><th>Acteur</th><th>Statut</th><th>Priorité</th><th>Début</th><th>Fin</th><th></th></tr></thead>
+                    <thead><tr><th>Titre</th><th>Service</th><th>Acteurs</th><th>Statut</th><th>Priorité</th><th>Début</th><th>Fin</th><th></th></tr></thead>
                     <tbody>
                     {% for task in project.tasks %}
                         <tr>
@@ -74,23 +80,113 @@
             {{ ui.empty_state('check2-square', 'Aucune tâche sur ce projet.', path('app_task_new') ~ '?projectId=' ~ project.id, 'Créer une tâche') }}
         {% endif %}
     </div>
+{% elseif activeTab == 'meetings' %}
+    {% include 'project/_meetings.html.twig' %}
 {% else %}
     <div class="row g-3">
         <div class="col-lg-8">
-            <div class="card-pilotis mb-3">
-                <div class="card-header"><i class="bi bi-info-circle me-2"></i>Description</div>
+            <div class="card-pilotis project-recap">
+                <div class="card-header"><span><i class="bi bi-clipboard-data me-2"></i>Récapitulatif</span></div>
                 <div class="card-body">
-                    <p class="mb-3">{{ project.description ?: 'Aucune description.' }}</p>
-                    <div class="row g-3">
-                        <div class="col-sm-6"><strong>Début</strong><br>{{ project.startDate|date('d/m/Y') }}</div>
-                        <div class="col-sm-6"><strong>Fin cible</strong><br>{{ project.endDate ? project.endDate|date('d/m/Y') : '—' }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-pilotis">
-                <div class="card-header"><i class="bi bi-robot me-2"></i>Synthèse hebdomadaire</div>
-                <div class="card-body">
-                    <div class="ai-summary-dark">{{ aiSummary }}</div>
+                    <section class="project-recap-block project-recap-description">
+                        <div class="project-recap-kicker"><i class="bi bi-text-paragraph"></i> Description</div>
+                        <p class="project-recap-text">{{ project.description ?: 'Aucune description.' }}</p>
+                        <div class="project-recap-dates">
+                            <div class="project-recap-date start">
+                                <span class="label">Début</span>
+                                <span class="value">{{ project.startDate|date('d/m/Y') }}</span>
+                            </div>
+                            <div class="project-recap-date end">
+                                <span class="label">Fin cible</span>
+                                <span class="value">{{ project.endDate ? project.endDate|date('d/m/Y') : '—' }}</span>
+                            </div>
+                            {% if project.forecastEndDate %}
+                                <div class="project-recap-date forecast">
+                                    <span class="label">Fin prévue</span>
+                                    <span class="value">{{ project.forecastEndDate|date('d/m/Y') }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </section>
+
+                    <section class="project-recap-block project-recap-week">
+                        <div class="project-recap-kicker"><i class="bi bi-calendar-week"></i> Synthèse hebdomadaire</div>
+                        <div class="recap-metrics">
+                            <div class="recap-metric {{ weekly.healthValue == 'red' ? 'danger' : (weekly.healthValue == 'orange' ? 'peach' : 'mint') }}">
+                                <div class="recap-metric-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                                <div>
+                                    <div class="recap-metric-value">{{ weekly.progress|number_format(1, ',', ' ') }} %</div>
+                                    <div class="recap-metric-label">Avancement</div>
+                                    <div class="recap-metric-hint">{{ weekly.healthLabel }}</div>
+                                </div>
+                            </div>
+                            <div class="recap-metric {{ weekly.completedThisWeek > 0 ? 'mint' : 'blue' }}">
+                                <div class="recap-metric-icon"><i class="bi bi-check2-circle"></i></div>
+                                <div>
+                                    <div class="recap-metric-value">{{ weekly.completedThisWeek }}</div>
+                                    <div class="recap-metric-label">Terminées</div>
+                                    <div class="recap-metric-hint">cette semaine</div>
+                                </div>
+                            </div>
+                            <div class="recap-metric lavender">
+                                <div class="recap-metric-icon"><i class="bi bi-arrow-repeat"></i></div>
+                                <div>
+                                    <div class="recap-metric-value">{{ weekly.inProgress }}</div>
+                                    <div class="recap-metric-label">En cours</div>
+                                    <div class="recap-metric-hint">en réalisation</div>
+                                </div>
+                            </div>
+                            <div class="recap-metric {{ weekly.overdueCount > 0 ? 'danger' : 'mint' }}">
+                                <div class="recap-metric-icon"><i class="bi bi-exclamation-circle"></i></div>
+                                <div>
+                                    <div class="recap-metric-value">{{ weekly.overdueCount }}</div>
+                                    <div class="recap-metric-label">Retards</div>
+                                    <div class="recap-metric-hint">{{ weekly.overdueCount > 0 ? 'à traiter' : 'aucun' }}</div>
+                                </div>
+                            </div>
+                            <div class="recap-metric {{ weekly.activeRisks > 0 ? 'yellow' : 'mint' }}">
+                                <div class="recap-metric-icon"><i class="bi bi-shield-exclamation"></i></div>
+                                <div>
+                                    <div class="recap-metric-value">{{ weekly.activeRisks }}</div>
+                                    <div class="recap-metric-label">Risques</div>
+                                    <div class="recap-metric-hint">{{ weekly.activeRisks > 0 ? 'actifs' : 'aucun actif' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if weekly.insight %}
+                            <div class="recap-insight {{ weekly.insight.tone }}">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>{{ weekly.insight.text }}</span>
+                            </div>
+                        {% endif %}
+
+                        {% if weekly.forecast %}
+                            <div class="recap-insight {{ weekly.forecast.tone }} mt-2">
+                                <i class="bi bi-calendar-event"></i>
+                                <span>{{ weekly.forecast.text }}</span>
+                            </div>
+                        {% endif %}
+
+                        {% if weekly.topRisk %}
+                            <div class="recap-insight warning mt-2">
+                                <i class="bi bi-shield-exclamation"></i>
+                                <span>Risque principal : « {{ weekly.topRisk.title }} » (score {{ weekly.topRisk.score }}).</span>
+                            </div>
+                        {% endif %}
+
+                        {% if weekly.overdueTasks|length %}
+                            <div class="recap-extra">
+                                <strong>Tâches en retard</strong>
+                                {% for task in weekly.overdueTasks %}
+                                    <div class="recap-overdue-item">
+                                        <span>{{ task.title }}</span>
+                                        <span>échéance {{ task.dueDate }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </section>
                 </div>
             </div>
         </div>

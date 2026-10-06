@@ -33,7 +33,7 @@
                         <td>{{ client.company ?: '—' }}</td>
                         <td>{{ client.email ?: '—' }}</td>
                         <td>{{ client.phone ?: '—' }}</td>
-                        <td class="text-end"><a href="{{ path('app_client_show', {id: client.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
+                        <td class="text-end"><a href="{{ path('app_client_show', {id: client.id}) }}" class="btn btn-sm btn-accent">Voir</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>

@@ -63,7 +63,7 @@
                         <td>{{ ui.incident_status_badge(incident.status) }}</td>
                         <td>{{ incident.dueDate ? incident.dueDate|date('d/m/Y') : '—' }}</td>
                         <td class="text-end">
-                            <a href="{{ path('app_incident_show', {id: incident.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a>
+                            <a href="{{ path('app_incident_show', {id: incident.id}) }}" class="btn btn-sm btn-accent">Voir</a>
                         </td>
                     </tr>
                 {% endfor %}

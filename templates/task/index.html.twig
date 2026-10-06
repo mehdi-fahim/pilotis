@@ -46,7 +46,7 @@
         <div class="table-responsive">
             <table class="table table-pilotis">
                 <thead>
-                    <tr><th>Titre</th><th>Projet</th><th>Service</th><th>Acteur</th><th>Statut</th><th>Priorité</th><th>Début</th><th>Fin</th><th></th></tr>
+                    <tr><th>Titre</th><th>Projet</th><th>Service</th><th>Acteurs</th><th>Statut</th><th>Priorité</th><th>Début</th><th>Fin</th><th></th></tr>
                 </thead>
                 <tbody>
                 {% for task in tasks %}
@@ -62,7 +62,7 @@
                         <td>{{ ui.priority_badge(task.priority) }}</td>
                         <td>{{ task.startDate ? task.startDate|date('d/m/Y') : '—' }}</td>
                         <td>{{ task.dueDate ? task.dueDate|date('d/m/Y') : '—' }}</td>
-                        <td class="text-end"><a href="{{ path('app_task_show', {id: task.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
+                        <td class="text-end"><a href="{{ path('app_task_show', {id: task.id}) }}" class="btn btn-sm btn-accent">Voir</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>

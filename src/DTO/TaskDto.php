@@ -22,7 +22,8 @@ class TaskDto
     #[Assert\NotNull(message: 'Le projet est obligatoire.')]
     public ?Project $project = null;
 
-    public ?Actor $assignedActor = null;
+    /** @var list<Actor> */
+    public array $assignedActors = [];
 
     public ?Department $department = null;
 

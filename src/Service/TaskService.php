@@ -24,11 +24,14 @@ final class TaskService
     ) {
     }
 
+    /**
+     * @param list<Actor> $assignedActors
+     */
     public function create(
         Project $project,
         string $title,
         ?string $description = null,
-        ?Actor $assignedActor = null,
+        array $assignedActors = [],
         ?Department $department = null,
         TaskStatus $status = TaskStatus::TODO,
         Priority $priority = Priority::MEDIUM,
@@ -43,7 +46,7 @@ final class TaskService
             ->setProject($project)
             ->setTitle($title)
             ->setDescription($description)
-            ->setAssignedActor($assignedActor)
+            ->syncAssignedActors($assignedActors)
             ->setDepartment($department)
             ->setStatus($status)
             ->setPriority($priority)
@@ -67,7 +70,7 @@ final class TaskService
      * @param array{
      *     title?: string,
      *     description?: string|null,
-     *     assignedActor?: Actor|null,
+     *     assignedActors?: list<Actor>,
      *     department?: Department|null,
      *     status?: TaskStatus,
      *     priority?: Priority,
@@ -87,8 +90,8 @@ final class TaskService
             $task->setDescription($data['description']);
         }
 
-        if (array_key_exists('assignedActor', $data)) {
-            $task->setAssignedActor($data['assignedActor']);
+        if (array_key_exists('assignedActors', $data)) {
+            $task->syncAssignedActors($data['assignedActors']);
         }
 
         if (array_key_exists('department', $data)) {

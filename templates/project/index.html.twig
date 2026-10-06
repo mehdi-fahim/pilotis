@@ -43,7 +43,7 @@
                         <td>{{ ui.health_badge(project.healthStatus) }}</td>
                         <td style="min-width:120px">{{ ui.progress_bar(project.progressPercent) }}</td>
                         <td class="text-end">
-                            <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="btn btn-sm btn-outline-dark-custom"><i class="bi bi-kanban"></i></a>
+                            <a href="{{ path('app_kanban_board', {projectId: project.id}) }}" class="btn btn-sm btn-icon" title="Kanban" aria-label="Ouvrir le kanban"><i class="bi bi-kanban"></i></a>
                             <a href="{{ path('app_project_show', {id: project.id}) }}" class="btn btn-sm btn-accent">Voir</a>
                         </td>
                     </tr>

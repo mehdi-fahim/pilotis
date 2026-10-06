@@ -3,15 +3,15 @@
 
 {% block title %}Services - Pilotis{% endblock %}
 {% block page_title %}Services{% endblock %}
+{% block breadcrumb %}Administration / Services{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ path('app_department_new') }}" class="btn btn-accent btn-pilotis"><i class="bi bi-plus-lg"></i> Nouveau service</a>
+{% endblock %}
 
 {% block body %}
-<div class="page-header">
-    <div>
-        <h2>Services</h2>
-        <div class="subtitle">Départements et unités organisationnelles</div>
-    </div>
-    <a href="{{ path('app_department_new') }}" class="btn btn-primary btn-pilotis"><i class="bi bi-plus-lg"></i> Nouveau service</a>
-</div>
+<p class="femly-kind is-unit"><i class="bi bi-diagram-3"></i> Organisation</p>
+<p class="femly-lead">Unités et départements. {{ departments|length }} service{{ departments|length > 1 ? 's' : '' }} affiché{{ departments|length > 1 ? 's' : '' }}.</p>
 
 {% include '_partials/_list_filters.html.twig' with {
     reset_path: path('app_department_index'),
@@ -21,26 +21,30 @@
     ]
 } %}
 
-<div class="card-pilotis">
-    {% if departments %}
-        <div class="table-responsive">
-            <table class="table table-pilotis">
-                <thead><tr><th>Nom</th><th>Code</th><th>Acteurs</th><th>Tâches</th><th></th></tr></thead>
-                <tbody>
-                {% for department in departments %}
-                    <tr>
-                        <td class="fw-semibold">{{ department.name }}</td>
-                        <td>{{ department.code ?: '—' }}</td>
-                        <td>{{ department.actors|length }}</td>
-                        <td>{{ department.tasks|length }}</td>
-                        <td class="text-end"><a href="{{ path('app_department_show', {id: department.id}) }}" class="btn btn-sm btn-outline-primary btn-pilotis">Voir</a></td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        {{ ui.empty_state('diagram-3', 'Aucun service trouvé.', path('app_department_new'), 'Créer un service') }}
-    {% endif %}
-</div>
+{% if departments %}
+    <div class="femly-grid">
+        {% for department in departments %}
+            <article class="femly-card femly-person is-unit">
+                <div class="femly-person-top">
+                    <span class="femly-avatar"><i class="bi bi-diagram-3"></i></span>
+                    {% if department.code %}
+                        <span class="femly-status is-on">{{ department.code }}</span>
+                    {% endif %}
+                </div>
+                <h3>{{ department.name }}</h3>
+                <p>{{ department.actors|length }} acteur{{ department.actors|length > 1 ? 's' : '' }} · {{ department.tasks|length }} tâche{{ department.tasks|length > 1 ? 's' : '' }}</p>
+                <div class="femly-tags">
+                    <span class="femly-tag">{{ department.actors|length }} acteurs</span>
+                    <span class="femly-tag is-quiet">{{ department.tasks|length }} tâches</span>
+                </div>
+                <div class="femly-person-actions">
+                    <a class="is-primary" href="{{ path('app_department_show', {id: department.id}) }}"><i class="bi bi-eye"></i> Voir</a>
+                    <a href="{{ path('app_department_edit', {id: department.id}) }}"><i class="bi bi-pencil"></i> Modifier</a>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    {{ ui.empty_state('diagram-3', 'Aucun service trouvé.', path('app_department_new'), 'Créer un service') }}
+{% endif %}
 {% endblock %}
